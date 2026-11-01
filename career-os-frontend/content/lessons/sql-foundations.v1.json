@@ -1,0 +1,55 @@
+{
+  "lesson_id": "sql-foundations",
+  "version": 1,
+  "title": "Think in tables: your first SQL query",
+  "objective": "Read a simple table and write a SELECT query that answers a question.",
+  "estimated_seconds": 360,
+  "skill_ids": ["sql-querying", "data-literacy"],
+  "segments": [
+    {
+      "segment_id": "why-sql",
+      "title": "Ask a question of a table",
+      "duration_ms": 30000,
+      "narration_text": "A database table is a set of related facts. SQL lets us ask a precise question about those facts. Imagine a small table of job applications. We want to see which roles are still in progress.",
+      "board_events": [
+        { "id": "why-title", "offset_ms": 0, "duration_ms": 500, "kind": "text", "z_index": 1, "payload": { "x": 0.08, "y": 0.1, "text": "Ask a question of your data" }, "accessible_text": "The board title reads: Ask a question of your data." },
+        { "id": "table-outline", "offset_ms": 2500, "duration_ms": 600, "kind": "rectangle", "z_index": 1, "payload": { "x": 0.08, "y": 0.28, "width": 0.55, "height": 0.42 }, "accessible_text": "A table outline appears, representing a small set of job applications." },
+        { "id": "table-columns", "offset_ms": 4000, "duration_ms": 800, "kind": "text", "z_index": 2, "payload": { "x": 0.12, "y": 0.34, "text": "company   role       stage" }, "accessible_text": "The table has company, role, and stage columns." },
+        { "id": "question", "offset_ms": 8000, "duration_ms": 700, "kind": "text", "z_index": 2, "payload": { "x": 0.08, "y": 0.78, "text": "Which roles are still in progress?" }, "accessible_text": "A question appears below the table: Which roles are still in progress?" },
+        { "id": "table-image", "offset_ms": 11500, "duration_ms": 800, "kind": "image", "z_index": 2, "payload": { "x": 0.65, "y": 0.3, "width": 0.28, "height": 0.32, "src": "/lessons/applications-table.svg" }, "accessible_text": "A small prepared illustration shows two rows of fictional job application data." },
+        { "id": "mark-stage", "offset_ms": 17000, "duration_ms": 400, "kind": "highlight", "z_index": 3, "payload": { "x": 0.48, "y": 0.33, "width": 0.12, "height": 0.06 }, "accessible_text": "The stage column is highlighted as the field that can answer the question." }
+      ],
+      "materials": [{ "label": "Table sketch", "kind": "diagram", "description": "A sample applications table with company, role and stage columns.", "uri": "/lessons/applications-table.svg" }],
+      "checkpoint": { "prompt": "Which column tells us whether an application is in progress?", "answer": "stage" }
+    },
+    {
+      "segment_id": "first-query",
+      "title": "Read a SELECT query",
+      "duration_ms": 45000,
+      "narration_text": "SELECT names the columns we want to see. FROM names the table. WHERE keeps only rows that match a condition. Read the query from top to bottom: select company and role, from applications, where stage is interviewing.",
+      "board_events": [
+        { "id": "query-title", "offset_ms": 0, "duration_ms": 400, "kind": "text", "z_index": 1, "payload": { "x": 0.08, "y": 0.12, "text": "Read a SELECT query" }, "accessible_text": "The board title reads: Read a SELECT query." },
+        { "id": "query-box", "offset_ms": 2000, "duration_ms": 400, "kind": "rectangle", "z_index": 1, "payload": { "x": 0.08, "y": 0.25, "width": 0.72, "height": 0.48 }, "accessible_text": "A box frames a three-line SQL query." },
+        { "id": "select-line", "offset_ms": 3500, "duration_ms": 700, "kind": "text", "z_index": 2, "payload": { "x": 0.13, "y": 0.32, "text": "SELECT company, role" }, "accessible_text": "First line: SELECT company, role." },
+        { "id": "from-line", "offset_ms": 6500, "duration_ms": 700, "kind": "text", "z_index": 2, "payload": { "x": 0.13, "y": 0.44, "text": "FROM applications" }, "accessible_text": "Second line: FROM applications." },
+        { "id": "where-line", "offset_ms": 9500, "duration_ms": 700, "kind": "text", "z_index": 2, "payload": { "x": 0.13, "y": 0.56, "text": "WHERE stage = 'interviewing'" }, "accessible_text": "Third line: WHERE stage equals interviewing." },
+        { "id": "flow-arrow", "offset_ms": 15000, "duration_ms": 500, "kind": "arrow", "z_index": 3, "payload": { "x": 0.82, "y": 0.36, "to_x": 0.82, "to_y": 0.6 }, "accessible_text": "An arrow connects the selected columns to the row filter." }
+      ],
+      "materials": [{ "label": "Query reference", "kind": "document", "description": "A text reference for SELECT, FROM and WHERE." }],
+      "checkpoint": { "prompt": "What does WHERE do?", "answer": "Filters rows by a condition." }
+    }
+  ],
+  "quiz": [
+    { "id": "select-purpose", "prompt": "Which clause chooses the columns to show?", "options": ["SELECT", "FROM", "WHERE"], "answer_index": 0, "explanation": "SELECT names the columns returned in the result." },
+    { "id": "filter-purpose", "prompt": "Which clause keeps only matching rows?", "options": ["SELECT", "FROM", "WHERE"], "answer_index": 2, "explanation": "WHERE applies a condition to filter rows." }
+  ],
+  "accessibility": {
+    "transcript": true,
+    "captions": true,
+    "descriptions": ["The board first shows an applications table, then a three-line SQL query."],
+    "reduced_motion_fallback": true
+  },
+  "sources": [
+    { "label": "PostgreSQL SELECT documentation", "url": "https://www.postgresql.org/docs/current/sql-select.html", "accessed_at": "2026-10-31" }
+  ]
+}

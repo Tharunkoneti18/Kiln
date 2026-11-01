@@ -1,0 +1,268 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ---------------------------------------------------------------------------
+   Palette, matched to the product reference: a white canvas, near-black navy
+   text, one bright blue for emphasis and actions, pale blue tiles, and a
+   grey pill for the active navigation item. Pale lavender is used only for
+   small informational chips.
+
+   Evidence states keep one fixed meaning on every screen:
+   demonstrated = blue, supported = indigo, transferable = amber,
+   gap = rose, unknown = slate.
+--------------------------------------------------------------------------- */
+:root {
+  --radius: 0.75rem;
+
+  /* Page canvas: very slightly blue-tinted white, so the gradient sweep reads. */
+  --background: oklch(0.985 0.008 240);
+  --foreground: oklch(0.16 0.025 255);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.16 0.025 255);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.16 0.025 255);
+
+  /* Primary: vivid cornflower blue — same hue as Unstop CTA. */
+  --primary: oklch(0.52 0.22 258);
+  --primary-foreground: oklch(0.99 0.003 255);
+  --brand-2: oklch(0.46 0.21 260);
+
+  --secondary: oklch(0.96 0.006 250);
+  --secondary-foreground: oklch(0.22 0.025 255);
+  --muted: oklch(0.96 0.006 245);
+  --muted-foreground: oklch(0.48 0.012 255);
+  --accent: oklch(0.948 0.032 245);
+  --accent-foreground: oklch(0.40 0.18 256);
+  --destructive: oklch(0.55 0.21 20);
+  --destructive-foreground: oklch(0.99 0.004 20);
+
+  --border: oklch(0.91 0.010 245);
+  --input: oklch(0.89 0.012 245);
+  --ring: oklch(0.52 0.22 258);
+  --raised: oklch(0.95 0.008 245);
+
+  /* Tile surfaces: clean white-blue, not heavily tinted. */
+  --tile: oklch(0.960 0.020 240);
+  --tile-strong: oklch(0.935 0.034 240);
+  --tile-border: oklch(0.905 0.028 240);
+  --chip: oklch(0.952 0.028 270);
+  --chip-foreground: oklch(0.42 0.20 266);
+  /* Nav active: very pale blue wash, subtle. */
+  --nav-active: oklch(0.950 0.016 240);
+  /* Sidebar: pure white so it contrasts with the page gradient. */
+  --sidebar: oklch(1 0 0);
+
+  --state-demonstrated: oklch(0.50 0.20 256);
+  --state-supported: oklch(0.48 0.19 280);
+  --state-transferable: oklch(0.54 0.13 72);
+  --state-gap: oklch(0.52 0.21 18);
+  --state-unknown: oklch(0.50 0.012 255);
+
+  --shadow-panel-value: 0 1px 3px rgb(14 22 50 / 0.06), 0 4px 14px rgb(14 22 50 / 0.06);
+  --shadow-lifted-value: 0 2px 8px rgb(14 22 50 / 0.07), 0 16px 40px rgb(14 22 50 / 0.10);
+  --shadow-tint: 222 40% 14%;
+
+  /* Page-level gradient: soft sky sweep from top-left, fades to white. */
+  --page-gradient: linear-gradient(135deg, oklch(0.940 0.040 236) 0%, oklch(0.970 0.018 248) 30%, oklch(0.990 0.004 255) 65%, oklch(1 0 0) 100%);
+}
+
+.dark {
+  --background: oklch(0.17 0.02 265);
+  --foreground: oklch(0.95 0.006 260);
+  --card: oklch(0.21 0.022 265);
+  --card-foreground: oklch(0.95 0.006 260);
+  --popover: oklch(0.23 0.024 265);
+  --popover-foreground: oklch(0.95 0.006 260);
+
+  --primary: oklch(0.7 0.16 255);
+  --primary-foreground: oklch(0.16 0.03 260);
+  --brand-2: oklch(0.64 0.17 258);
+
+  --secondary: oklch(0.25 0.022 265);
+  --secondary-foreground: oklch(0.92 0.008 260);
+  --muted: oklch(0.245 0.02 265);
+  --muted-foreground: oklch(0.73 0.015 260);
+  --accent: oklch(0.28 0.05 258);
+  --accent-foreground: oklch(0.9 0.05 255);
+  --destructive: oklch(0.69 0.18 20);
+  --destructive-foreground: oklch(0.17 0.03 20);
+
+  --border: oklch(0.3 0.022 265);
+  --input: oklch(0.34 0.024 265);
+  --ring: oklch(0.7 0.16 255);
+  --raised: oklch(0.245 0.022 265);
+
+  --tile: oklch(0.25 0.04 258);
+  --tile-strong: oklch(0.29 0.05 258);
+  --tile-border: oklch(0.33 0.05 258);
+  --chip: oklch(0.28 0.05 280);
+  --chip-foreground: oklch(0.82 0.1 280);
+  --nav-active: oklch(0.27 0.022 265);
+  --sidebar: oklch(0.19 0.02 265);
+
+  --state-demonstrated: oklch(0.72 0.14 255);
+  --state-supported: oklch(0.74 0.13 285);
+  --state-transferable: oklch(0.8 0.13 78);
+  --state-gap: oklch(0.72 0.16 18);
+  --state-unknown: oklch(0.69 0.015 265);
+
+  --shadow-panel-value: inset 0 1px 0 rgb(255 255 255 / 0.05);
+  --shadow-lifted-value: inset 0 1px 0 rgb(255 255 255 / 0.07), 0 18px 44px rgb(0 0 0 / 0.35);
+  --shadow-tint: 240 30% 4%;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-brand-2: var(--brand-2);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-raised: var(--raised);
+  --color-tile: var(--tile);
+  --color-tile-strong: var(--tile-strong);
+  --color-tile-border: var(--tile-border);
+  --color-chip: var(--chip);
+  --color-chip-foreground: var(--chip-foreground);
+  --color-nav-active: var(--nav-active);
+  --color-sidebar: var(--sidebar);
+
+  --color-demonstrated: var(--state-demonstrated);
+  --color-supported: var(--state-supported);
+  --color-transferable: var(--state-transferable);
+  --color-gap: var(--state-gap);
+  --color-unknown: var(--state-unknown);
+
+  --font-sans: "Inter Variable", "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 3px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 10px);
+
+  --shadow-panel: var(--shadow-panel-value);
+  --shadow-lifted: var(--shadow-lifted-value);
+
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  --animate-border-spin: border-spin 6s linear infinite;
+  --animate-aurora: aurora 18s ease-in-out infinite alternate;
+  --animate-float-slow: float-slow 7s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* Registered so the conic gradient angle can be interpolated. */
+@property --border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes border-spin {
+  to { --border-angle: 360deg; }
+}
+
+@keyframes aurora {
+  0% { transform: translate3d(-6%, -4%, 0) rotate(0deg) scale(1); }
+  100% { transform: translate3d(6%, 5%, 0) rotate(12deg) scale(1.12); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@layer base {
+  * { @apply border-border; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    @apply text-foreground font-sans antialiased;
+    background: var(--page-gradient);
+    background-attachment: fixed;
+    font-size: 14px;
+    text-rendering: optimizeLegibility;
+  }
+  :focus-visible { @apply outline-ring outline-2 outline-offset-2; }
+  .numeric {
+    @apply font-mono tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  ::selection { background: var(--accent); color: var(--accent-foreground); }
+}
+
+@layer utilities {
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+  }
+  .scroll-slim { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+
+  /* The accent as a solid fill. Kept as a utility name so every AI surface
+     uses the same token; it is deliberately not a gradient. */
+  .bg-brand { background-color: var(--primary); }
+  .text-brand { color: var(--primary); }
+
+  /* Hero section gradient sweep — matches the page background. */
+  .hero-gradient {
+    background: linear-gradient(135deg, oklch(0.930 0.048 232) 0%, oklch(0.958 0.026 244) 40%, oklch(0.984 0.008 255) 100%);
+    border-radius: inherit;
+  }
+
+  /* Neutral sheen while the AI is working. */
+  .text-shimmer {
+    background-image: linear-gradient(90deg, var(--muted-foreground) 0%, var(--foreground) 45%, var(--muted-foreground) 90%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: var(--animate-shimmer);
+  }
+
+  /* Emphasised panel: an accent-tinted hairline, not a glow. */
+  .border-glow {
+    border: 1px solid color-mix(in oklch, var(--primary) 38%, var(--border));
+    box-shadow: var(--shadow-panel), inset 3px 0 0 var(--primary);
+  }
+
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, var(--border) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+}
+
+/* Whiteboard ink. Board events come from the manifest without class names. */
+.board-text { fill: var(--foreground); font-family: var(--font-sans); font-size: 34px; font-weight: 600; letter-spacing: -0.4px; }
+.board-shape { fill: none; stroke: var(--primary); stroke-width: 2.5; stroke-linecap: round; }
+.board-arrow { stroke: var(--primary); stroke-width: 2.5; color: var(--primary); stroke-linecap: round; }
+.board-highlight { fill: var(--primary); opacity: 0.14; }
+.board-grid line { stroke: var(--border); stroke-width: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-labelledby="title desc">
+  <title id="title">Sample applications table</title>
+  <desc id="desc">Fictional company, role and stage values in a simple table.</desc>
+  <rect width="560" height="260" rx="12" fill="#fff"/>
+  <path d="M18 18h524v52H18z" fill="#edf3f4"/>
+  <g fill="#536568" font-family="Arial,sans-serif" font-size="19" font-weight="600">
+    <text x="38" y="51">Company</text><text x="220" y="51">Role</text><text x="400" y="51">Stage</text>
+  </g>
+  <g fill="#243437" font-family="Arial,sans-serif" font-size="18">
+    <text x="38" y="112">Northwind</text><text x="220" y="112">Analyst</text><text x="400" y="112">Interviewing</text>
+    <text x="38" y="164">Harbor Labs</text><text x="220" y="164">Associate</text><text x="400" y="164">Applied</text>
+  </g>
+  <g stroke="#e4e9ea" stroke-width="2"><path d="M18 70h524M18 130h524M18 182h524"/><path d="M200 18v218M380 18v218"/></g>
+</svg>

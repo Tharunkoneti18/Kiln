@@ -1,0 +1,38 @@
+{
+  "lesson_id": "sql-joins-v1",
+  "version": 1,
+  "title": "Mastering SQL Joins & Relational Analysis",
+  "objective": "Understand INNER, LEFT, RIGHT, and FULL joins through visual set theory and interactive queries.",
+  "estimated_seconds": 1800,
+  "skill_ids": ["sql", "data-modeling"],
+  "segments": [
+    {
+      "segment_id": "seg_intro",
+      "title": "Why Relational Joins Matter",
+      "narration_text": "Welcome to SQL Joins. In relational databases, data lives in normalized tables. Today we connect them.",
+      "duration_ms": 60000,
+      "board_events": [
+        {
+          "event_id": "e1",
+          "segment_id": "seg_intro",
+          "offset_ms": 2000,
+          "type": "text",
+          "payload": { "x": 0.1, "y": 0.2, "text": "Table A ⨝ Table B", "font_scale": 0.05 },
+          "accessible_text": "Visualizing Table A joined with Table B"
+        }
+      ]
+    }
+  ],
+  "quiz": [
+    {
+      "question_id": "q1",
+      "prompt": "Which JOIN returns all rows from the left table even if no match exists in the right table?",
+      "options": ["INNER JOIN", "LEFT JOIN", "RIGHT JOIN", "CROSS JOIN"],
+      "correct_option_index": 1,
+      "explanation": "LEFT JOIN preserves every row from the left table, populating NULL for missing right-side values."
+    }
+  ],
+  "accessibility": {
+    "transcript": "Welcome to SQL Joins. In relational databases, data lives in normalized tables. Today we connect them."
+  }
+}

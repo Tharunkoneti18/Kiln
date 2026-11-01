@@ -1,0 +1,38 @@
+You are responsible for **Part A — Supabase Platform and Career Intelligence** for Career OS. Your teammate is building **Part B — Tutor and Learning Experience** in parallel. Build Part A completely enough to integrate with Part B, while keeping the agreed boundary intact.
+
+## First understand the product
+
+Before changing code:
+
+1. Inspect the repository, current branch, working tree, root instructions such as `AGENTS.md`, and existing app structure. Preserve unrelated work.
+2. Read `Career_OS_PRD_and_Build_Blueprint.md` from beginning to end, including the Supabase implementation addendum, tables, APIs/events, work split, milestones, and acceptance criteria. Read the DOCX too if available. Do not rely only on search results or the summary.
+3. Explain back to yourself what the whole product does, what Part B is building, and exactly where Part A hands off to it. Treat the PRD as the product source of truth; identify any conflicts between it and the code before acting.
+4. Use the installed Superpowers skills. Read the relevant skill instructions before following them. Use `using-superpowers`, `writing-plans`, and `executing-plans`; also use `test-driven-development` and `verification-before-completion` where they apply. Create or update a concrete Part A implementation plan before executing it. Do not skip required skill steps.
+
+## Your ownership
+
+Own the shared application foundation and Part A:
+
+- Supabase project/local development setup, Auth integration, schema migrations, explicit grants, RLS, Storage policies, seed data, and generated database types.
+- Profile and resume intake/review, target-role intake, skill evidence map, transferable-skill explanations, weekly plan generation/edit/approval, portfolio project suggestions and artifacts.
+- Typed mock interview and rubric feedback, application tracking, outcome summaries and user-approved adaptation proposals.
+- Career dashboard and consumption of Tutor learning events to update plan progress and skill evidence.
+
+Follow the PRD’s Supabase requirements: user-owned data stays protected by RLS; never rely on `TO authenticated` alone; `UPDATE` needs the appropriate `SELECT`, `USING`, and `WITH CHECK` policies; review grants as well as RLS; keep service/secret keys out of browser code. Use Deno Edge Functions for authenticated server-side orchestration and provider secrets. Keep long-running work retryable and idempotent.
+
+## Parallel-work boundary
+
+You are the migration owner. Create the shared schema and TypeScript contracts early so Part B can work against them. Coordinate these shared contracts with the Part B owner: user/lesson IDs, `lesson_progress`, `learning_events`, event schema version, event types, payloads, and idempotency behavior.
+
+Do not implement the Tutor page, whiteboard renderer, avatar, or playback controller. Do not block Part B on your feature completion: publish fixtures and usable types as soon as the contract is stable. If a schema change is needed later, document it and coordinate before changing the shared contract.
+
+## Implementation expectations
+
+- Follow the existing stack if the repository already has one. If it is greenfield, use the PRD’s proposed stack and avoid creating competing scaffolds.
+- Make the AI pipeline inspectable: validated structured output, source/provenance, user review, versioned prompts/schemas, and deterministic checks around generated results. Do not let a model write unreviewed career claims or silently commit a plan.
+- Build the smallest complete vertical slice first: profile/role → sourced skill map → plan → Tutor lesson reference → completion event → updated career progress.
+- Keep all work inside Part A ownership, make changes in reviewable increments, and preserve the teammate’s ability to integrate.
+
+## Definition of done
+
+Part A is ready when the PRD’s Part A acceptance criteria are met, migrations and fixtures are reproducible, RLS/grants and Storage access are verified with separate users, generated database types match the schema, and Tutor events can update the right plan item exactly once. Run the checks required by the repository and the applicable Superpowers skills. Report what shipped, what you verified, and any remaining contract decisions clearly.
