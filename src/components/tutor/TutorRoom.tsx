@@ -8,6 +8,7 @@ import {
   BookmarkSimple,
   Books,
   ChalkboardTeacher,
+  CheckCircle,
   Clock,
   FileText,
   Image as ImageIcon,
@@ -333,29 +334,23 @@ export function TutorRoom({
       <div className="flex min-h-[calc(100dvh-3.5rem)] flex-col">
         <div className="mx-auto w-full max-w-[1500px] flex-1 px-4 py-6 sm:px-6">
           {/* Lesson header. */}
-          <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="flex min-w-0 flex-col gap-2">
-              <p className="text-muted-foreground text-[12px] font-semibold">
-                {context}
-              </p>
-              <h1 className="text-[25px] leading-tight font-bold tracking-tight sm:text-[29px]">
-                {lesson.title}
-              </h1>
-              <p className="text-muted-foreground max-w-[64ch] text-[13.5px] leading-relaxed">
-                {lesson.objective}
-              </p>
+          <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex min-w-0 flex-col gap-2.5">
+              <p className="text-brand-text text-[12.5px] font-medium">{context}</p>
+              <h1 className="type-title text-foreground">{lesson.title}</h1>
+              <p className="text-gray-11 max-w-[64ch] text-[14.5px] leading-relaxed">{lesson.objective}</p>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
-              <Badge variant="primary">
+              <Badge variant="brand">
                 <Sparkle weight="fill" /> {pathLabel}
               </Badge>
-              <Badge variant="neutral">
+              <Badge variant="neutral" className="tabular">
                 <Clock /> {Math.round(durationMs / 60000)} min
               </Badge>
             </div>
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-[228px_minmax(0,1fr)_280px]">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[228px_minmax(0,1fr)_280px]">
             {/* Outline rail. */}
             <aside className="lg:sticky lg:top-20 lg:self-start">
               <Card>
@@ -374,11 +369,10 @@ export function TutorRoom({
             <section aria-label="Lesson workspace" className="flex min-w-0 flex-col gap-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <ChalkboardTeacher size={15} className="text-primary" weight="duotone" />
-                  <span className="text-[13px] font-bold">{currentSegment.title}</span>
-                  <span className="numeric text-muted-foreground text-[11.5px]">
-                    {String(segmentIndex + 1).padStart(2, "0")} /{" "}
-                    {String(lesson.segments.length).padStart(2, "0")}
+                  <ChalkboardTeacher size={16} className="text-gray-10" />
+                  <span className="text-[14px] font-medium text-foreground">{currentSegment.title}</span>
+                  <span className="text-gray-10 text-[12.5px] tabular">
+                    {segmentIndex + 1} of {lesson.segments.length}
                   </span>
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => void saveProgress()}>
@@ -389,7 +383,7 @@ export function TutorRoom({
               {/* Zoom and pan: the board scales inside a clipped frame and can
                   be dragged once enlarged. */}
               <div className="relative">
-                <div className="overflow-hidden rounded-xl">
+                <div className="overflow-hidden rounded-[var(--radius-surface)] border border-border shadow-xs">
                   <motion.div
                     animate={{ scale: zoom }}
                     transition={{ type: "spring", stiffness: 260, damping: 28 }}
@@ -401,10 +395,10 @@ export function TutorRoom({
                     <Whiteboard board={controller.getBoard()} title={currentSegment.title} />
                   </motion.div>
                 </div>
-                <div className="bg-card/90 absolute right-3 bottom-3 flex items-center gap-0.5 rounded-md border p-0.5 shadow-sm backdrop-blur">
-                  <Button variant="ghost" size="icon-sm" aria-label="Zoom out of the board" onClick={() => setZoom((value) => Math.max(1, +(value - 0.25).toFixed(2)))}><MagnifyingGlassMinus size={14} /></Button>
-                  <span className="numeric w-10 text-center text-[11px] font-bold">{Math.round(zoom * 100)}%</span>
-                  <Button variant="ghost" size="icon-sm" aria-label="Zoom into the board" onClick={() => setZoom((value) => Math.min(2, +(value + 0.25).toFixed(2)))}><MagnifyingGlassPlus size={14} /></Button>
+                <div className="bg-card/90 absolute right-3 bottom-3 flex items-center gap-0.5 rounded-[9px] border border-border p-0.5 shadow-md backdrop-blur">
+                  <Button variant="ghost" size="icon-xs" aria-label="Zoom out of the board" onClick={() => setZoom((value) => Math.max(1, +(value - 0.25).toFixed(2)))}><MagnifyingGlassMinus /></Button>
+                  <span className="w-10 text-center text-[11.5px] font-medium tabular">{Math.round(zoom * 100)}%</span>
+                  <Button variant="ghost" size="icon-xs" aria-label="Zoom into the board" onClick={() => setZoom((value) => Math.min(2, +(value + 0.25).toFixed(2)))}><MagnifyingGlassPlus /></Button>
                 </div>
               </div>
 
@@ -421,9 +415,7 @@ export function TutorRoom({
                 <Card>
                   <CardContent className="flex flex-col gap-2 p-4">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-muted-foreground text-[11px] font-bold tracking-wide">
-                        Lesson transcript
-                      </span>
+                      <span className="text-gray-11 text-[12.5px] font-medium">Lesson transcript</span>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -437,7 +429,7 @@ export function TutorRoom({
                     </div>
                     <p
                       aria-label="Lesson transcript"
-                      className="text-[13px] leading-relaxed"
+                      className="text-[14px] leading-[1.65] text-foreground"
                     >
                       {currentSegment.narration_text}
                     </p>
@@ -448,7 +440,7 @@ export function TutorRoom({
               {voiceMessage && (
                 <p
                   role="status"
-                  className="text-muted-foreground bg-raised rounded-md px-3 py-2 text-[12.5px]"
+                  className="text-gray-11 bg-gray-3 rounded-[8px] px-3 py-2 text-[13px]"
                 >
                   {voiceMessage}
                 </p>
@@ -456,15 +448,15 @@ export function TutorRoom({
 
               {lesson.quiz.map((question, questionIndex) => (
                 <Card key={question.id}>
-                  <CardContent className="flex flex-col gap-3 p-4">
-                    <span className="text-muted-foreground text-[11px] font-bold tracking-wide">
-                      Pause and check {String(questionIndex + 1).padStart(2, "0")}
+                  <CardContent className="flex flex-col gap-3.5 p-5">
+                    <span className="text-brand-text text-[12.5px] font-medium tabular">
+                      Check {questionIndex + 1} of {lesson.quiz.length}
                     </span>
                     <fieldset className="flex flex-col gap-3">
-                      <legend className="mb-2 text-[13.5px] leading-snug font-semibold">
+                      <legend className="mb-2 text-[15px] leading-snug font-medium text-foreground">
                         {question.prompt}
                       </legend>
-                      <div className="grid gap-2 sm:grid-cols-2">
+                      <div className="grid grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-2">
                         {question.options.map((option, index) => (
                           <RadioOption
                             key={option}
@@ -474,7 +466,7 @@ export function TutorRoom({
                               type="radio"
                               name={question.id}
                               aria-label={option}
-                              className="accent-primary mt-0.5"
+                              className="mt-0.5 accent-[var(--gray-12)]"
                               checked={snapshot.quiz_state[question.id] === index}
                               onChange={() => {
                                 controller.setQuizAnswer(question.id, index);
@@ -505,8 +497,9 @@ export function TutorRoom({
                       </div>
                     </fieldset>
                     {answerMessage && (
-                      <span role="status" className="text-primary text-[12px] font-semibold">
-                        {answerMessage}
+                      <span role="status" className="text-success flex items-center gap-1.5 text-[13px] font-medium">
+                        <CheckCircle size={15} weight="fill" aria-hidden="true" />
+                        <span>{answerMessage}</span>
                       </span>
                     )}
                   </CardContent>
@@ -516,18 +509,16 @@ export function TutorRoom({
               {/* What this lesson is for. Keeps the loop visible from inside it. */}
               <Link
                 href="/assessments"
-                className="border-primary/30 bg-primary/[0.05] hover:bg-primary/[0.09] flex items-center gap-3 rounded-xl border p-4 transition-colors"
+                className="group bg-card hover:border-border-strong flex items-center gap-3.5 rounded-[var(--radius-surface)] border border-border p-4 shadow-xs transition-colors"
               >
-                <Target size={17} weight="duotone" className="text-primary shrink-0" />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[13px] font-bold">
-                    This builds toward: proof of skill in the Proof Lab
-                  </span>
-                  <span className="text-muted-foreground block text-[12px]">
-                    Completing the lesson and its checks sends skill evidence to your Digital Twin
-                  </span>
+                <span className="bg-brand-soft text-brand-text grid size-9 shrink-0 place-items-center rounded-[9px]">
+                  <Target size={17} />
                 </span>
-                <ArrowSquareOut size={14} className="text-muted-foreground shrink-0" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13.5px] font-medium text-foreground">This builds toward proof in the Proof Lab</span>
+                  <span className="text-gray-10 block text-[12.5px]">Finishing the lesson and its checks sends evidence to your digital twin</span>
+                </span>
+                <ArrowSquareOut size={14} className="text-gray-9 group-hover:text-gray-11 shrink-0 transition-colors" />
               </Link>
             </section>
 
@@ -539,7 +530,7 @@ export function TutorRoom({
               <Card>
                 <CardContent className="flex flex-col gap-3 p-4">
                   <div className="flex items-center justify-between gap-2">
-                    <h2 className="text-[13px] font-bold">Your instructor</h2>
+                    <h2 className="text-[13.5px] font-medium text-foreground">Your instructor</h2>
                     <AnimatePresence mode="wait">
                       <motion.span
                         key={snapshot.playing ? "speaking" : "ready"}
@@ -548,10 +539,8 @@ export function TutorRoom({
                         exit={{ opacity: 0, scale: 0.9 }}
                         transition={{ duration: 0.18 }}
                         className={cn(
-                          "rounded-full border px-2 py-0.5 text-[11px] font-bold",
-                          snapshot.playing
-                            ? "border-primary/30 bg-primary/10 text-primary"
-                            : "border-border text-muted-foreground",
+                          "rounded-full px-2 py-[3px] text-[11.5px] leading-none font-medium",
+                          snapshot.playing ? "bg-brand-soft text-brand-text" : "bg-gray-3 text-gray-11",
                         )}
                       >
                         {snapshot.playing ? "Teaching" : "Ready"}
@@ -559,25 +548,28 @@ export function TutorRoom({
                     </AnimatePresence>
                   </div>
                   <Instructor speaking={snapshot.playing} palette={palette} />
-                  <p className="text-muted-foreground text-[11.5px] leading-snug">
-                    A focused guide for the skills your next role asks for.
-                  </p>
+                  <div className="bg-gray-2 flex flex-col gap-1 rounded-[10px] border border-border p-3">
+                    <span className="text-gray-11 text-[12px] font-medium">Watch for</span>
+                    <p className="text-[13px] leading-relaxed text-foreground">
+                      Retrieval latency grows with top-k, and chunk size trades recall against precision.
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardContent className="flex flex-col gap-2.5 p-4">
-                  <h3 className="flex items-center gap-1.5 text-[12.5px] font-bold">
-                    <Books size={14} className="text-primary" /> Lesson materials
+                  <h3 className="flex items-center gap-1.5 text-[13.5px] font-medium text-foreground">
+                    <Books size={15} className="text-gray-10" /> Lesson materials
                   </h3>
                   {currentSegment.materials.map((material) => (
                     <a
                       key={material.label}
                       href={material.uri ?? "#"}
                       aria-label={material.label + ": " + material.description}
-                      className="hover:bg-raised group flex items-start gap-2.5 rounded-md p-2 transition-colors"
+                      className="hover:bg-gray-3 group -mx-2 flex items-start gap-2.5 rounded-[8px] p-2 transition-colors"
                     >
-                      <span className="bg-raised text-muted-foreground group-hover:text-primary mt-0.5 grid size-7 shrink-0 place-items-center rounded-md transition-colors">
+                      <span className="bg-gray-3 text-gray-10 group-hover:bg-gray-4 group-hover:text-foreground mt-0.5 grid size-7 shrink-0 place-items-center rounded-[7px] transition-colors">
                         {material.kind === "diagram" ? (
                           <ImageIcon size={14} />
                         ) : (
@@ -597,14 +589,14 @@ export function TutorRoom({
 
               <Card>
                 <CardContent className="flex flex-col gap-2 p-4">
-                  <h3 className="text-[12.5px] font-bold">Sources</h3>
+                  <h3 className="text-[13.5px] font-medium text-foreground">Sources</h3>
                   {lesson.sources.map((source) => (
                     <a
                       key={source.url}
                       href={source.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-muted-foreground hover:text-primary flex items-center gap-1.5 text-[12px] transition-colors"
+                      className="text-gray-11 hover:text-foreground flex items-center gap-1.5 text-[13px] underline-offset-4 transition-colors hover:underline"
                     >
                       {source.label}
                       <ArrowSquareOut size={12} className="shrink-0" />
@@ -628,7 +620,7 @@ export function TutorRoom({
               {eventPending && (
                 <div
                   role="status"
-                  className="border-transferable/35 bg-transferable/[0.07] flex flex-col gap-2 rounded-xl border p-3.5"
+                  className="bg-warning-soft border-warning/30 flex flex-col gap-2 rounded-[var(--radius-surface)] border p-3.5"
                 >
                   <strong className="text-[12.5px] font-semibold">Learning update pending</strong>
                   <span className="text-muted-foreground text-[12px] leading-snug">

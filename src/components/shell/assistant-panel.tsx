@@ -1,12 +1,14 @@
 "use client";
 
-import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { PaperPlaneTilt, Robot, Sparkle, X } from "@phosphor-icons/react";
+import { ArrowUp, X } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
-import { ThinkingDots, Typewriter } from "@/components/motion/primitives";
+import { Typewriter } from "@/components/motion/primitives";
 import { assistantPrompts, assistantReplies } from "@/lib/mock/data";
+import { ease, spring } from "@/lib/motion";
 import { cn } from "@/lib/utils";
+import { BrandMark } from "./brand";
 
 /**
  * The AI Career Assistant, available on every screen.
@@ -53,18 +55,11 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
     setThinking(true);
     window.setTimeout(() => {
       setThinking(false);
-      setMessages((previous) => [
-        ...previous,
-        { id: crypto.randomUUID(), role: "assistant", text: assistantReplies[trimmed] ?? fallbackReply },
-      ]);
+      setMessages((previous) => [...previous, { id: crypto.randomUUID(), role: "assistant", text: assistantReplies[trimmed] ?? fallbackReply }]);
     }, 900);
   }, []);
 
-  return (
-    <AssistantContext.Provider value={{ open, setOpen, messages, thinking, ask }}>
-      {children}
-    </AssistantContext.Provider>
-  );
+  return <AssistantContext.Provider value={{ open, setOpen, messages, thinking, ask }}>{children}</AssistantContext.Provider>;
 }
 
 export function useAssistant() {
@@ -74,76 +69,109 @@ export function useAssistant() {
 }
 
 /** The conversation body, shared by the slide-over and the full page. */
-export function AssistantConversation({ className }: { className?: string }) {
+export function AssistantConversation({ className, autoFocus }: { className?: string; autoFocus?: boolean }) {
   const { messages, thinking, ask } = useAssistant();
   const [draft, setDraft] = useState("");
   const reduce = useReducedMotion();
   const lastId = messages.at(-1)?.id;
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const fresh = messages.length === 1;
+
+  // Keep the newest message in view as replies stream in.
+  useEffect(() => {
+    const node = scrollRef.current;
+    if (node) node.scrollTo({ top: node.scrollHeight, behavior: reduce ? "auto" : "smooth" });
+  }, [messages, thinking, reduce]);
+
+  const submit = () => {
+    ask(draft);
+    setDraft("");
+  };
 
   return (
     <div className={cn("flex min-h-0 flex-col", className)}>
-      <div className="scroll-slim flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
-        {messages.map((message) => (
-          <motion.div
-            key={message.id}
-            initial={reduce ? false : { opacity: 0, y: 8, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.25 }}
-            className={cn(
-              "max-w-[88%] rounded-xl px-3.5 py-2.5 text-[13px] leading-relaxed",
-              message.role === "user"
-                ? "bg-primary text-primary-foreground self-end rounded-br-sm"
-                : "bg-raised self-start rounded-bl-sm border",
-            )}
-          >
-            {message.role === "assistant" && message.id === lastId && message.id !== "welcome" ? (
-              <Typewriter text={message.text} />
-            ) : (
-              message.text
-            )}
-          </motion.div>
-        ))}
-        {thinking && (
-          <div className="bg-raised flex items-center gap-2 self-start rounded-xl border px-3.5 py-3">
-            <ThinkingDots />
-            <span className="text-shimmer text-[12px] font-semibold">Reading your plan and evidence</span>
-          </div>
-        )}
+      <div ref={scrollRef} className="scroll-slim flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-5 py-6">
+        <AnimatePresence initial={false}>
+          {messages.map((message) => (
+            <motion.div
+              key={message.id}
+              initial={reduce ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.32, ease: ease.out }}
+              className={cn("flex gap-3", message.role === "user" ? "justify-end" : "justify-start")}
+            >
+              {message.role === "assistant" ? (
+                <>
+                  <BrandMark size={22} className="mt-0.5" />
+                  <p className="max-w-[92%] text-[14px] leading-[1.65] text-foreground">
+                    {message.id === lastId && message.id !== "welcome" ? <Typewriter text={message.text} /> : message.text}
+                  </p>
+                </>
+              ) : (
+                <p className="bg-gray-3 max-w-[85%] rounded-[14px] rounded-br-[6px] px-3.5 py-2.5 text-[14px] leading-relaxed text-foreground">
+                  {message.text}
+                </p>
+              )}
+            </motion.div>
+          ))}
+          {thinking && (
+            <motion.div key="thinking" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center gap-3">
+              <BrandMark size={22} className={reduce ? "" : "animate-pulse-soft"} />
+              <span className="text-shimmer text-[13.5px]">Reading your plan and evidence</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      <div className="flex flex-col gap-2 border-t p-3">
-        <div className="flex flex-wrap gap-1.5">
-          {assistantPrompts.map((prompt) => (
-            <button
-              key={prompt}
-              type="button"
-              onClick={() => ask(prompt)}
-              className="hover:border-primary/40 hover:text-foreground text-muted-foreground rounded-full border px-2.5 py-1 text-[11.5px] font-semibold transition-colors"
+      <div className="flex flex-col gap-3 px-4 pt-2 pb-4">
+        <AnimatePresence>
+          {fresh && (
+            <motion.div
+              initial={false}
+              exit={{ opacity: 0, height: 0, transition: { duration: 0.2 } }}
+              className="flex flex-wrap gap-1.5 overflow-hidden"
             >
-              {prompt}
-            </button>
-          ))}
-        </div>
+              {assistantPrompts.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => ask(prompt)}
+                  className="text-gray-11 hover:border-border-strong hover:text-foreground rounded-full border border-border bg-card px-3 py-1.5 text-[12.5px] transition-colors"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
         <form
-          className="flex items-center gap-2"
           onSubmit={(event) => {
             event.preventDefault();
-            ask(draft);
-            setDraft("");
+            submit();
           }}
+          className={cn(
+            "bg-card flex items-end gap-2 rounded-[14px] border border-border p-2 pl-3.5 shadow-xs transition-[border-color,box-shadow] duration-150",
+            "focus-within:border-border-strong focus-within:shadow-sm",
+          )}
         >
-          <label htmlFor="assistant-input" className="sr-only">
-            Ask the career assistant
-          </label>
-          <input
+          <label htmlFor="assistant-input" className="sr-only">Ask the career assistant</label>
+          <textarea
             id="assistant-input"
+            rows={1}
+            autoFocus={autoFocus}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            placeholder="Ask about your plan, gaps or applications"
-            className="bg-card border-input focus-visible:border-primary h-10 flex-1 rounded-md border px-3 text-[13px] focus-visible:outline-none"
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                submit();
+              }
+            }}
+            placeholder="Ask about your plan, a skill gap, or a role"
+            className="max-h-32 min-h-[28px] flex-1 resize-none bg-transparent py-1 text-[14px] leading-relaxed text-foreground outline-none placeholder:text-gray-9"
           />
-          <Button type="submit" size="icon" aria-label="Send" disabled={!draft.trim()}>
-            <PaperPlaneTilt size={15} weight="fill" />
+          <Button type="submit" size="icon-sm" aria-label="Send" disabled={!draft.trim()} className="rounded-[9px]">
+            <ArrowUp weight="bold" />
           </Button>
         </form>
       </div>
@@ -151,46 +179,50 @@ export function AssistantConversation({ className }: { className?: string }) {
   );
 }
 
-/** Slide-over panel opened from the top bar on any screen. */
+/** Slide-over panel opened from the top bar or the command palette. */
 export function AssistantSheet() {
   const { open, setOpen } = useAssistant();
   const reduce = useReducedMotion();
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => event.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, setOpen]);
 
   return (
     <AnimatePresence>
       {open && (
         <>
           <motion.div
-            className="fixed inset-0 z-40 bg-[hsl(var(--shadow-tint)/0.35)]"
+            className="bg-overlay fixed inset-0 z-40"
             initial={reduce ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
             onClick={() => setOpen(false)}
           />
           <motion.aside
             role="dialog"
-            aria-label="AI Career Assistant"
-            className="bg-card fixed inset-y-0 right-0 z-50 flex w-full max-w-[420px] flex-col border-l shadow-[var(--shadow-lifted)]"
-            initial={reduce ? false : { x: 440 }}
-            animate={{ x: 0 }}
-            exit={{ x: 440 }}
-            transition={{ type: "spring", stiffness: 340, damping: 34 }}
+            aria-modal="true"
+            aria-label="Career assistant"
+            className="bg-background fixed inset-y-2 right-2 z-50 flex w-[calc(100vw-1rem)] max-w-[440px] flex-col overflow-hidden rounded-[14px] border border-border shadow-lg"
+            initial={reduce ? { opacity: 0 } : { x: "calc(100% + 16px)" }}
+            animate={reduce ? { opacity: 1 } : { x: 0 }}
+            exit={reduce ? { opacity: 0 } : { x: "calc(100% + 16px)" }}
+            transition={spring.overlay}
           >
-            <div className="flex items-center gap-3 border-b p-4">
-              <span className="bg-brand text-primary-foreground grid size-9 place-items-center rounded-full">
-                <Robot size={18} weight="fill" />
-              </span>
+            <div className="flex items-center gap-3 border-b border-border px-4 py-3">
               <div className="flex min-w-0 flex-1 flex-col">
-                <span className="text-[14px] font-bold">Career Assistant</span>
-                <span className="text-muted-foreground flex items-center gap-1 text-[11.5px]">
-                  <Sparkle size={11} weight="fill" className="text-primary" /> Uses your plan, twin and market data
-                </span>
+                <span className="text-[14px] font-semibold text-foreground">Assistant</span>
+                <span className="text-gray-10 text-[12px]">Answers from your plan, evidence and market data</span>
               </div>
               <Button variant="ghost" size="icon-sm" aria-label="Close assistant" onClick={() => setOpen(false)}>
-                <X size={16} />
+                <X />
               </Button>
             </div>
-            <AssistantConversation className="flex-1" />
+            <AssistantConversation className="flex-1" autoFocus />
           </motion.aside>
         </>
       )}

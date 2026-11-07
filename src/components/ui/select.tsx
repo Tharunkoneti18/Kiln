@@ -17,8 +17,8 @@ export function SelectTrigger({
   return (
     <SelectPrimitive.Trigger
       className={cn(
-        "bg-card border-input text-foreground flex h-9 w-full items-center justify-between gap-2 rounded-md border px-3 text-sm transition-colors",
-        "focus-visible:border-primary focus-visible:ring-primary/25 focus-visible:ring-2 focus-visible:outline-none",
+        "bg-card border-input text-foreground flex h-9 w-full items-center justify-between gap-2 rounded-[var(--radius-control)] border px-3 text-[13.5px] shadow-xs transition-[border-color,box-shadow] duration-150 hover:border-border-strong",
+        "focus-visible:border-brand focus-visible:shadow-[0_0_0_3px_color-mix(in_oklab,var(--brand)_18%,transparent)] focus-visible:outline-none",
         "data-[placeholder]:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
@@ -44,8 +44,8 @@ export function SelectContent({
         position={position}
         sideOffset={4}
         className={cn(
-          "bg-popover text-popover-foreground relative z-50 max-h-72 min-w-[8rem] overflow-hidden rounded-md border shadow-[var(--shadow-lifted)]",
-          "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
+          "bg-popover text-popover-foreground relative z-50 max-h-72 min-w-[8rem] overflow-hidden rounded-[10px] border border-border shadow-lg origin-[var(--radix-select-content-transform-origin)]",
+          "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.96] data-[state=open]:duration-150",
           className,
         )}
         {...props}
@@ -67,14 +67,14 @@ export function SelectItem({
     <SelectPrimitive.Item
       className={cn(
         "relative flex w-full cursor-pointer items-center gap-2 rounded-[6px] py-1.5 pr-8 pl-2.5 text-[13px] outline-none select-none",
-        "focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        "focus:bg-gray-3 data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         className,
       )}
       {...props}
     >
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
       <SelectPrimitive.ItemIndicator className="absolute right-2.5 flex items-center">
-        <Check size={13} weight="bold" className="text-primary" />
+        <Check size={13} weight="bold" className="text-brand" />
       </SelectPrimitive.ItemIndicator>
     </SelectPrimitive.Item>
   );

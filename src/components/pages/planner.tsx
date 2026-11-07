@@ -6,13 +6,10 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   ArrowsClockwise,
   BookOpen,
-  CalendarBlank,
-  CheckCircle,
-  Circle,
+  Check,
   ClipboardText,
   Exam,
   FileText,
-  Lightbulb,
   Play,
   Sparkle,
   VideoCamera,
@@ -20,204 +17,343 @@ import {
 } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ProgressRing } from "@/components/motion/primitives";
-import { PageHeader, PageShell, SectionHeading } from "@/components/shell/page-header";
-import { CareerPath3D, type PathStep } from "@/components/three/career-path";
+import { Meter } from "@/components/system/data";
+import { useToast } from "@/components/system/toast";
+import { PageHeader, PageShell, Rise, SectionHeading } from "@/components/shell/page-header";
 import { learner, learningPlan, skillById, targetRole } from "@/lib/mock/data";
 import type { DailyTask, WeeklyModule } from "@/lib/mock/types";
+import { ease, spring } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 const resourceIcon = { docs: FileText, article: BookOpen, video: VideoCamera, generated: Sparkle } as const;
+const resourceLabel = { docs: "Docs", article: "Article", video: "Video", generated: "Generated" } as const;
 const kindLabel: Record<DailyTask["kind"], string> = {
-  lesson: "Tutor lecture", reading: "Reading", exercise: "Practical exercise", assignment: "Weekly assignment",
-  revision: "Revision", checkpoint: "Knowledge checkpoint", assessment: "Weekly assessment",
+  lesson: "Tutor lecture",
+  reading: "Reading",
+  exercise: "Practical exercise",
+  assignment: "Weekly assignment",
+  revision: "Revision",
+  checkpoint: "Knowledge checkpoint",
+  assessment: "Weekly assessment",
 };
 
 export function PlannerView() {
   const reduce = useReducedMotion();
+  const { toast } = useToast();
   const [weekNumber, setWeekNumber] = useState(3);
   const [done, setDone] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(learningPlan.flatMap((module) => module.days.map((task) => [task.id, task.done]))),
   );
   const [recoveryApplied, setRecoveryApplied] = useState(false);
   const module = learningPlan.find((item) => item.week === weekNumber)!;
-  const totalTasks = learningPlan.flatMap((item) => item.days);
-  const completed = totalTasks.filter((task) => done[task.id]).length;
+  const allTasks = learningPlan.flatMap((item) => item.days);
+  const completed = allTasks.filter((task) => done[task.id]).length;
+  const totalHours = learningPlan.reduce((sum, item) => sum + item.hours, 0);
+  const weekDone = module.days.filter((task) => done[task.id]).length;
 
-  const steps: PathStep[] = learningPlan.map((item) => ({
-    label: "Week " + item.week,
-    status: item.status === "completed" ? "completed" : item.status === "in_progress" ? "current" : "upcoming",
-    progress: 0,
-  }));
+  const toggle = (task: DailyTask) => {
+    const next = !done[task.id];
+    setDone((previous) => ({ ...previous, [task.id]: next }));
+    if (next) toast({ title: "Task complete", description: task.title });
+  };
 
   return (
-    <PageShell className="flex flex-col gap-7">
+    <PageShell>
       <PageHeader
-        icon="plan"
-        context={"Personalised for " + targetRole.title + ", " + learner.weeklyHours + " hours a week"}
-        title="Personalized Learning Planner"
-        description="Your skill gaps turned into a week-by-week plan in prerequisite order. It adapts to your assessment results, your available time and any session you miss."
-        actions={<RegenerateDialog />}
+        context={"Built for " + targetRole.title + " · " + learner.weeklyHours + "h a week"}
+        title="Your learning plan"
+        description="Your skill gaps, ordered by prerequisite into eight weeks. The plan adapts to assessment results, your time budget and missed sessions."
+        actions={<RecalibrateDialog />}
       />
 
-      <Card className="overflow-hidden">
-        <CardContent className="grid gap-6 p-0 lg:grid-cols-[1fr_280px]">
-          <CareerPath3D steps={steps} className="h-[230px] w-full" fallback={<div className="text-muted-foreground grid size-full place-items-center text-[12px]">Week 3 of 8</div>} />
-          <div className="flex items-center gap-5 border-t p-5 lg:border-t-0 lg:border-l">
-            <ProgressRing value={(completed / totalTasks.length) * 100} size={96} gradientId="plan-ring" label={<span className="numeric text-[18px] font-bold">{Math.round((completed / totalTasks.length) * 100)}%</span>} />
-            <div className="flex flex-col gap-1 text-[12px]">
-              <span className="text-[13.5px] font-bold">8-week roadmap</span>
-              <span className="text-muted-foreground">{completed} of {totalTasks.length} tasks done</span>
-              <span className="text-muted-foreground">{learningPlan.reduce((sum, item) => sum + item.hours, 0)} hours planned</span>
+      <Rise>
+        <Card className="overflow-hidden">
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-3 border-b border-border px-5 py-4">
+            <div className="flex items-baseline gap-2">
+              <span className="type-stat tabular">{Math.round((completed / allTasks.length) * 100)}%</span>
+              <span className="text-gray-10 text-[13px]">of the plan complete</span>
+            </div>
+            <span className="text-gray-10 text-[13px] tabular">{completed} of {allTasks.length} tasks</span>
+            <span className="text-gray-10 text-[13px] tabular">{totalHours} hours planned</span>
+          </div>
+          <Timeline weeks={learningPlan} selected={weekNumber} onSelect={setWeekNumber} />
+        </Card>
+      </Rise>
+
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={module.id}
+          initial={reduce ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reduce ? { opacity: 0 } : { opacity: 0, y: -6, transition: { duration: 0.12 } }}
+          transition={{ duration: 0.32, ease: ease.out }}
+          className="grid grid-cols-[minmax(0,1fr)] gap-x-8 gap-y-10 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]"
+        >
+          <div className="flex min-w-0 flex-col gap-8">
+            <div className="flex flex-col gap-3">
+              <span className="text-gray-10 text-[13px]">
+                Week {module.week} · about {module.hours} hours
+              </span>
+              <h2 className="text-[22px] leading-tight font-semibold tracking-[-0.02em] text-foreground">{module.objective}</h2>
+              <div className="flex flex-wrap gap-1.5">
+                {module.skillIds.map((id) => {
+                  const skill = skillById(id);
+                  return skill ? <Badge key={id} variant={skill.state}>{skill.label}</Badge> : null;
+                })}
+              </div>
+            </div>
+
+            <div>
+              <SectionHeading title="Daily tasks" badge={weekDone + " of " + module.days.length} />
+              <Card>
+                <ul className="divide-y divide-border">
+                  {module.days.map((task) => (
+                    <TaskRow key={task.id} task={task} done={!!done[task.id]} onToggle={() => toggle(task)} />
+                  ))}
+                </ul>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-8 sm:grid-cols-2">
+              <div>
+                <SectionHeading title="Topics" />
+                <ol className="flex flex-col gap-2.5">
+                  {module.topics.map((topic, index) => (
+                    <li key={topic} className="flex gap-3 text-[13.5px] text-foreground">
+                      <span className="text-gray-9 w-7 shrink-0 tabular">{module.week}.{index + 1}</span>
+                      {topic}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+              <div>
+                <SectionHeading title="Resources" />
+                <ul className="flex flex-col gap-1">
+                  {module.resources.map((resource) => {
+                    const Glyph = resourceIcon[resource.kind];
+                    return (
+                      <li key={resource.label} className="hover:bg-gray-3 -mx-2 flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13.5px] transition-colors">
+                        <Glyph size={15} className="text-gray-10 shrink-0" />
+                        <span className="min-w-0 flex-1 truncate text-foreground">{resource.label}</span>
+                        <span className="text-gray-10 text-[12px]">{resourceLabel[resource.kind]}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Week selector. */}
-      <div className="scroll-slim -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-        {learningPlan.map((item) => (
-          <button key={item.id} type="button" onClick={() => setWeekNumber(item.week)} aria-pressed={weekNumber === item.week}
-            className="relative flex min-w-[150px] flex-col gap-1 rounded-xl border px-3.5 py-3 text-left transition-colors">
-            {weekNumber === item.week && <motion.span layoutId="week-pill" className="border-primary bg-primary/8 absolute inset-0 rounded-xl border-2" transition={{ type: "spring", stiffness: 380, damping: 32 }} />}
-            <span className="relative flex items-center justify-between">
-              <span className="numeric text-[11px] font-bold">Week {item.week}</span>
-              <WeekStatus status={item.status} />
-            </span>
-            <span className="relative text-[12px] leading-snug font-semibold">{item.objective}</span>
-          </button>
-        ))}
-      </div>
-
-      <AnimatePresence mode="wait">
-        <motion.div key={module.id} initial={reduce ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-          className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
-          <Card>
-            <CardContent className="flex flex-col gap-5">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="flex flex-col gap-1">
-                  <span className="text-muted-foreground text-[11.5px] font-semibold">Week {module.week} objective, about {module.hours} hours</span>
-                  <h2 className="text-[20px] font-bold tracking-tight">{module.objective}</h2>
-                </div>
-                <div className="flex flex-wrap gap-1">{module.skillIds.map((id) => { const skill = skillById(id); return skill ? <Badge key={id} variant={skill.state}>{skill.label}</Badge> : null; })}</div>
+          <div className="flex min-w-0 flex-col gap-5">
+            <Card>
+              <div className="flex flex-col gap-1.5 p-5">
+                <span className="text-gray-11 flex items-center gap-2 text-[12.5px] font-medium">
+                  <ClipboardText size={15} /> Weekly assignment
+                </span>
+                <p className="text-[14px] leading-relaxed text-foreground">{module.assignment}</p>
               </div>
-
-              <div className="flex flex-col gap-2">
-                <h3 className="text-[12.5px] font-bold">Daily learning objectives</h3>
-                {module.days.map((task) => (
-                  <div key={task.id} className={cn("flex items-center gap-3 rounded-lg border p-3 transition-colors", done[task.id] && "bg-raised/70")}>
-                    <button type="button" aria-label={(done[task.id] ? "Mark not done: " : "Mark done: ") + task.title} onClick={() => setDone((prev) => ({ ...prev, [task.id]: !prev[task.id] }))}>
-                      <motion.span key={String(done[task.id])} initial={reduce ? false : { scale: 0.5 }} animate={{ scale: 1 }} className="block">
-                        {done[task.id] ? <CheckCircle size={19} weight="fill" className="text-primary" /> : <Circle size={19} className="text-muted-foreground" />}
-                      </motion.span>
-                    </button>
-                    <span className="numeric text-muted-foreground w-8 text-[11px] font-bold">{task.day}</span>
-                    <span className="min-w-0 flex-1">
-                      <span className={cn("block text-[13px] font-semibold", done[task.id] && "text-muted-foreground line-through")}>{task.title}</span>
-                      <span className="text-muted-foreground text-[11px]">{kindLabel[task.kind]}</span>
-                    </span>
-                    <span className="numeric text-muted-foreground text-[11px]">{task.minutes}m</span>
-                    {task.lessonId && <Button size="sm" variant={done[task.id] ? "ghost" : "primary"} asChild><Link href="/tutor"><Play size={12} weight="fill" /> Tutor</Link></Button>}
-                  </div>
-                ))}
+              <div className="flex flex-col gap-1.5 border-t border-border p-5">
+                <span className="text-gray-11 flex items-center gap-2 text-[12.5px] font-medium">
+                  <Exam size={15} /> Knowledge checkpoint
+                </span>
+                <p className="text-[14px] leading-relaxed text-foreground">{module.checkpoint}</p>
               </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="flex flex-col gap-2">
-                  <h3 className="text-[12.5px] font-bold">Topics and subtopics</h3>
-                  <ol className="flex flex-col gap-1.5">{module.topics.map((topic, index) => <li key={topic} className="flex gap-2 text-[12.5px]"><span className="numeric text-primary font-bold">{module.week}.{index + 1}</span>{topic}</li>)}</ol>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <h3 className="text-[12.5px] font-bold">Recommended resources</h3>
-                  {module.resources.map((resource) => { const Glyph = resourceIcon[resource.kind]; return <span key={resource.label} className="flex items-center gap-2 text-[12.5px]"><Glyph size={14} className="text-primary shrink-0" />{resource.label}<Badge variant="neutral" className="ml-auto">{resource.kind}</Badge></span>; })}
-                </div>
+              <div className="border-t border-border p-3">
+                <Button asChild variant="secondary" size="sm" className="w-full">
+                  <Link href="/assessments">Open in Proof Lab</Link>
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-
-          <div className="flex flex-col gap-5">
-            <Card><CardContent className="flex flex-col gap-3">
-              <span className="flex items-center gap-2 text-[13.5px] font-bold"><ClipboardText size={15} className="text-primary" /> Weekly assignment</span>
-              <p className="text-[12.5px]">{module.assignment}</p>
-              <span className="flex items-center gap-2 text-[13.5px] font-bold"><Exam size={15} className="text-primary" /> Checkpoint and assessment</span>
-              <p className="text-[12.5px]">{module.checkpoint}</p>
-              <Button variant="secondary" size="sm" asChild className="self-start"><Link href="/assessments">Open in Proof Lab</Link></Button>
-            </CardContent></Card>
+            </Card>
 
             {module.week === 3 && (
-              <Card className="border-transferable/40">
-                <CardContent className="flex flex-col gap-3">
-                  <span className="flex items-center gap-2 text-[13.5px] font-bold"><Warning size={15} weight="fill" className="text-transferable" /> Missed session recovery</span>
-                  <p className="text-[12.5px] leading-relaxed">You missed last Saturday&apos;s revision. A 20-minute catch-up fits Monday without moving anything else.</p>
-                  {recoveryApplied ? <Badge variant="demonstrated" className="self-start"><CheckCircle weight="fill" /> Rescheduled to Monday</Badge> : (
-                    <div className="flex gap-2"><Button size="sm" onClick={() => setRecoveryApplied(true)}>Reschedule</Button><Button variant="ghost" size="sm">Skip it</Button></div>
-                  )}
-                </CardContent>
+              <Card className="border-warning/30 bg-warning-soft/60 overflow-hidden">
+                <div className="flex gap-3 p-5">
+                  <Warning size={18} weight="fill" className="text-warning mt-0.5 shrink-0" />
+                  <div className="flex flex-col gap-1">
+                    <p className="text-[14px] font-medium text-foreground">You missed Saturday&rsquo;s revision</p>
+                    <p className="text-gray-11 text-[13px] leading-relaxed">
+                      A 20-minute catch-up fits Monday evening without moving anything else in the plan.
+                    </p>
+                    <AnimatePresence mode="wait" initial={false}>
+                      {recoveryApplied ? (
+                        <motion.div key="done" initial={reduce ? false : { opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={spring.snappy} className="mt-3">
+                          <Badge variant="success">
+                            <Check weight="bold" /> Moved to Monday, 20 min
+                          </Badge>
+                        </motion.div>
+                      ) : (
+                        <motion.div key="actions" exit={{ opacity: 0, transition: { duration: 0.1 } }} className="mt-3 flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setRecoveryApplied(true);
+                              toast({ title: "Revision rescheduled", description: "Monday, 20 minutes. Nothing else moved." });
+                            }}
+                          >
+                            Reschedule to Monday
+                          </Button>
+                          <Button variant="ghost" size="sm">Skip it</Button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
               </Card>
             )}
-
-            <Card className="border-glow"><CardContent className="flex flex-col gap-2">
-              <span className="flex items-center gap-2 text-[13.5px] font-bold"><Lightbulb size={15} weight="fill" className="text-primary" /> Progress-based adjustment</span>
-              <p className="text-[12.5px] leading-relaxed">Your debugging score (48) suggests stale-index issues are unclear. A 25-minute revision lecture has been proposed for week 3, Saturday.</p>
-              <div className="flex gap-2"><Button size="sm">Accept</Button><Button variant="ghost" size="sm">Not now</Button></div>
-            </CardContent></Card>
           </div>
         </motion.div>
       </AnimatePresence>
-
-      <section>
-        <SectionHeading title="Flexible schedule" description={"Tasks only land on your preferred days: " + learner.preferredDays.join(", ") + ". Drag-free: tap a week above to edit it."} />
-        <Card className="overflow-x-auto">
-          <div className="grid min-w-[620px] grid-cols-[90px_repeat(4,1fr)] text-[12px]">
-            <div className="border-b p-3" />
-            {learner.preferredDays.map((day) => <div key={day} className="border-b p-3 font-bold">{day}</div>)}
-            {learningPlan.map((item) => (
-              <ScheduleRow key={item.id} module={item} done={done} active={item.week === weekNumber} />
-            ))}
-          </div>
-        </Card>
-      </section>
     </PageShell>
   );
 }
 
-function ScheduleRow({ module, done, active }: { module: WeeklyModule; done: Record<string, boolean>; active: boolean }) {
+/**
+ * Eight-week timeline that doubles as the week selector. The track fills up
+ * to the current week once on load; the selection ring glides between weeks
+ * with a shared layout id.
+ */
+function Timeline({ weeks, selected, onSelect }: { weeks: WeeklyModule[]; selected: number; onSelect: (week: number) => void }) {
+  const reduce = useReducedMotion();
+  const currentIndex = weeks.findIndex((week) => week.status === "in_progress");
+  const fill = currentIndex / (weeks.length - 1);
+
   return (
-    <>
-      <div className={cn("numeric border-b p-3 font-bold", active && "text-primary")}>Week {module.week}</div>
-      {module.days.map((task) => (
-        <div key={task.id} className="border-b p-1.5">
-          <div className={cn("rounded-md px-2 py-1.5 text-[11px] font-semibold", done[task.id] ? "bg-primary/12 text-primary" : active ? "bg-primary/8 border-primary/30 border" : "bg-raised text-muted-foreground")}>
-            {task.title.split(":")[0]}
-          </div>
+    <div className="scroll-slim overflow-x-auto">
+      <div role="tablist" aria-label="Plan weeks" className="relative grid min-w-[760px] grid-cols-8 px-2 pt-6 pb-5">
+        <div className="bg-gray-4 absolute top-[38px] right-[calc(6.25%+8px)] left-[calc(6.25%+8px)] h-[2px] rounded-full" aria-hidden="true">
+          <motion.div
+            className="bg-gray-12 h-full origin-left rounded-full"
+            style={{ width: fill * 100 + "%" }}
+            initial={reduce ? false : { scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: 0.9, delay: 0.2, ease: ease.out }}
+          />
         </div>
-      ))}
-    </>
+        {weeks.map((week, index) => {
+          const isSelected = week.week === selected;
+          const status = week.status;
+          return (
+            <button
+              key={week.id}
+              type="button"
+              role="tab"
+              aria-selected={isSelected}
+              onClick={() => onSelect(week.week)}
+              className="group relative flex flex-col items-center gap-2.5 rounded-[10px] px-1.5 pt-1 pb-2 text-center outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+            >
+              {isSelected && (
+                <motion.span
+                  layoutId={reduce ? undefined : "plan-week"}
+                  transition={spring.layout}
+                  className="bg-gray-3 absolute inset-0 -z-0 rounded-[10px]"
+                />
+              )}
+              <motion.span
+                initial={reduce ? false : { scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.15 + index * 0.05, ...spring.snappy }}
+                className={cn(
+                  "relative grid size-7 place-items-center rounded-full text-[12px] font-semibold tabular ring-4 ring-card transition-colors",
+                  status === "completed" && "bg-gray-12 text-gray-1",
+                  status === "in_progress" && "bg-brand text-white",
+                  status !== "completed" && status !== "in_progress" && "bg-card text-gray-10 border border-border-strong group-hover:border-gray-9",
+                  isSelected && "ring-gray-3",
+                )}
+              >
+                {status === "completed" ? <Check size={12} weight="bold" /> : week.week}
+                {status === "in_progress" && !reduce && (
+                  <span className="border-brand absolute inset-0 animate-ping rounded-full border opacity-40 [animation-duration:2.4s]" aria-hidden="true" />
+                )}
+              </motion.span>
+              <span className="relative flex flex-col gap-0.5">
+                <span className={cn("text-[12px] font-medium", isSelected ? "text-foreground" : "text-gray-10")}>Week {week.week}</span>
+                <span className={cn("line-clamp-2 text-[11.5px] leading-snug", isSelected ? "text-gray-11" : "text-gray-9")}>{week.objective}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
-function WeekStatus({ status }: { status: WeeklyModule["status"] }) {
-  if (status === "completed") return <CheckCircle size={14} weight="fill" className="text-primary" />;
-  if (status === "in_progress") return <span className="bg-primary size-2 animate-pulse rounded-full" />;
-  if (status === "missed") return <Warning size={14} className="text-transferable" />;
-  return <Circle size={14} className="text-muted-foreground" />;
+function TaskRow({ task, done, onToggle }: { task: DailyTask; done: boolean; onToggle: () => void }) {
+  const reduce = useReducedMotion();
+  return (
+    <li className="flex items-center gap-3.5 px-5 py-3.5">
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={done}
+        aria-label={(done ? "Mark not done: " : "Mark done: ") + task.title}
+        onClick={onToggle}
+        className={cn(
+          "grid size-[18px] shrink-0 place-items-center rounded-[5px] border transition-colors duration-150",
+          done ? "bg-gray-12 border-gray-12 text-gray-1" : "border-gray-8 hover:border-gray-11 bg-card",
+        )}
+      >
+        <AnimatePresence initial={false}>
+          {done && (
+            <motion.span initial={reduce ? false : { scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.4, opacity: 0, transition: { duration: 0.1 } }} transition={spring.snappy}>
+              <Check size={11} weight="bold" />
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </button>
+      <span className="text-gray-10 w-8 shrink-0 text-[12.5px] tabular">{task.day}</span>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <span className={cn("truncate text-[13.5px] transition-colors", done ? "text-gray-10" : "font-medium text-foreground")}>{task.title}</span>
+        <span className="text-gray-10 text-[12px]">
+          {kindLabel[task.kind]} · {task.minutes} min
+        </span>
+      </div>
+      {task.lessonId && (
+        <Button size="xs" variant={done ? "ghost" : "secondary"} asChild>
+          <Link href="/tutor">
+            <Play weight="fill" /> Open in tutor
+          </Link>
+        </Button>
+      )}
+    </li>
+  );
 }
 
-function RegenerateDialog() {
+function RecalibrateDialog() {
+  const { toast } = useToast();
   return (
     <Dialog>
-      <DialogTrigger asChild><Button variant="secondary" size="sm"><ArrowsClockwise size={14} /> Regenerate plan</Button></DialogTrigger>
-      <DialogContent>
+      <DialogTrigger asChild>
+        <Button variant="secondary">
+          <ArrowsClockwise /> Recalibrate
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Regenerate the plan</DialogTitle>
-          <DialogDescription>Weeks 4 to 8 are rebuilt from your current Digital Twin. Completed weeks are kept. Use this after changing your target role or weekly hours.</DialogDescription>
+          <DialogTitle>Recalibrate your plan</DialogTitle>
+          <DialogDescription>
+            Pending weeks are re-ordered using your latest assessment evidence, weekly hours and interview dates. Finished weeks are not touched.
+          </DialogDescription>
         </DialogHeader>
-        <div className="bg-raised flex items-center gap-3 rounded-md p-3 text-[12.5px]"><CalendarBlank size={16} className="text-primary" /> {learner.weeklyHours} hours a week on {learner.preferredDays.join(", ")}</div>
+        <div className="bg-gray-2 flex flex-col gap-3 rounded-[10px] border border-border p-4">
+          <div className="flex justify-between text-[13px]">
+            <span className="text-gray-11">Weekly budget</span>
+            <span className="font-medium text-foreground tabular">{learner.weeklyHours} hours</span>
+          </div>
+          <div className="flex justify-between text-[13px]">
+            <span className="text-gray-11">Weeks affected</span>
+            <span className="font-medium text-foreground tabular">4 to 8</span>
+          </div>
+          <Meter value={3} max={8} size="sm" label="Weeks completed" />
+        </div>
         <div className="mt-5 flex justify-end gap-2">
-          <DialogClose asChild><Button variant="ghost" size="sm">Cancel</Button></DialogClose>
-          <DialogClose asChild><Button size="sm">Regenerate</Button></DialogClose>
+          <DialogClose asChild>
+            <Button variant="ghost">Cancel</Button>
+          </DialogClose>
+          <DialogClose asChild>
+            <Button onClick={() => toast({ title: "Plan recalibrated", description: "Weeks 4 to 8 now reflect your latest evidence." })}>Recalibrate plan</Button>
+          </DialogClose>
         </div>
       </DialogContent>
     </Dialog>

@@ -98,10 +98,10 @@ export function PlayerControls({
           onChange={(event) => onSeek(Number(event.target.value))}
           // The filled portion is painted with a gradient so the track shows
           // position without a second element layered over the input.
-          className="accent-primary h-1.5 min-w-[140px] flex-1 cursor-pointer appearance-none rounded-full"
+          className="accent-[var(--brand)] h-1.5 min-w-[140px] flex-1 cursor-pointer appearance-none rounded-full"
           style={{
             background:
-              "linear-gradient(to right, var(--primary) 0%, var(--primary) " +
+              "linear-gradient(to right, var(--brand) 0%, var(--brand) " +
               playedPercent +
               "%, var(--border) " +
               playedPercent +
@@ -136,7 +136,7 @@ export function PlayerControls({
           onClick={onToggleCaptions}
           className={cn(
             "inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-semibold transition-colors",
-            captionsEnabled ? "text-primary bg-primary/10" : "hover:text-foreground",
+            captionsEnabled ? "text-brand-text bg-brand-soft" : "hover:text-foreground",
           )}
         >
           <Subtitles size={15} />
@@ -149,7 +149,7 @@ export function PlayerControls({
             aria-label="Playback speed"
             value={rate}
             onChange={(event) => onRateChange(Number(event.target.value))}
-            className="bg-card border-input text-foreground focus-visible:border-primary rounded-md border px-1.5 py-1 text-[12px] font-semibold focus-visible:outline-none"
+            className="bg-card border-input text-foreground focus-visible:border-brand rounded-md border px-1.5 py-1 text-[12px] font-semibold focus-visible:outline-none"
           >
             <option value={0.75}>0.75x</option>
             <option value={0.9}>0.9x</option>
@@ -170,7 +170,7 @@ export function PlayerControls({
             step={0.1}
             value={volume}
             onChange={(event) => onVolumeChange(Number(event.target.value))}
-            className="accent-primary h-1 w-20 cursor-pointer"
+            className="accent-[var(--brand)] h-1 w-20 cursor-pointer"
           />
         </label>
       </div>

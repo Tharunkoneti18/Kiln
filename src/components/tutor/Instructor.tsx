@@ -105,7 +105,7 @@ function StaticInstructor({ speaking }: { speaking: boolean }) {
     >
       <span
         aria-hidden="true"
-        className="border-primary/30 bg-primary/10 text-primary grid size-20 place-items-center rounded-full border text-[19px] font-bold tracking-tight"
+        className="border-brand-border bg-brand-soft text-brand-text grid size-20 place-items-center rounded-full border text-[19px] font-bold tracking-tight"
       >
         CO
       </span>
@@ -165,13 +165,13 @@ export function Instructor({
         {/* Two soft rings behind the figure, brightening while teaching. */}
         <span
           className={
-            "border-primary/20 absolute top-1/2 left-1/2 size-40 -translate-x-1/2 -translate-y-1/2 rounded-full border transition-opacity duration-500 " +
+            "border-brand-border absolute top-1/2 left-1/2 size-40 -translate-x-1/2 -translate-y-1/2 rounded-full border transition-opacity duration-500 " +
             (speaking ? "opacity-100" : "opacity-40")
           }
         />
         <span
           className={
-            "border-primary/12 absolute top-1/2 left-1/2 size-56 -translate-x-1/2 -translate-y-1/2 rounded-full border transition-opacity duration-500 " +
+            "border-brand-border absolute top-1/2 left-1/2 size-56 -translate-x-1/2 -translate-y-1/2 rounded-full border transition-opacity duration-500 " +
             (speaking ? "opacity-100" : "opacity-30")
           }
         />

@@ -1,211 +1,259 @@
 "use client";
 
 import { useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
-import { Check, CloudArrowDown, FileText, Minus, Sparkle, TrendDown, TrendUp, UploadSimple } from "@phosphor-icons/react";
+import { AnimatePresence, motion, useInView, useReducedMotion } from "motion/react";
+import { useRef } from "react";
+import { Check, CloudArrowDown, FileText, Sparkle, TrendDown, TrendUp, UploadSimple } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ThinkingDots } from "@/components/motion/primitives";
-import { PageHeader, PageShell, SectionHeading } from "@/components/shell/page-header";
+import { Delta } from "@/components/system/data";
+import { useToast } from "@/components/system/toast";
+import { PageHeader, PageShell, Rise, Section } from "@/components/shell/page-header";
 import { marketTrends, postings, skillDemand, targetRole } from "@/lib/mock/data";
+import { ease } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 export function MarketView() {
-  const reduce = useReducedMotion();
-  const [pasted, setPasted] = useState("");
-  const [analysing, setAnalysing] = useState(false);
-  const [analysed, setAnalysed] = useState(false);
   const allSkills = [...new Set(postings.flatMap((posting) => [...posting.required, ...posting.preferred]))];
 
   return (
-    <PageShell className="flex flex-col gap-7">
+    <PageShell>
       <PageHeader
-        icon="market"
         context={targetRole.postingsAnalysed + " postings analysed for " + targetRole.title}
-        title="Job Market Intelligence"
-        description="What companies actually ask for, extracted from real job descriptions: required and preferred skills, experience, technologies and deliverables, with how demand is moving."
+        title="What the market actually asks for"
+        description="Requirements extracted from real job postings: how often each skill appears, how often it is mandatory, and how that changed over the last 90 days."
       />
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_1.3fr]">
-        <Card>
-          <CardContent className="flex flex-col gap-4">
-            <h2 className="text-[15px] font-bold">Add a job description</h2>
-            <Tabs defaultValue="paste" className="flex flex-col gap-3">
-              <TabsList className="self-start">
-                <TabsTrigger value="paste"><FileText /> Paste</TabsTrigger>
-                <TabsTrigger value="upload"><UploadSimple /> Upload</TabsTrigger>
-                <TabsTrigger value="api"><CloudArrowDown /> Job sources</TabsTrigger>
-              </TabsList>
-              <TabsContent value="paste" className="flex flex-col gap-3">
-                <label htmlFor="jd-paste" className="sr-only">Job description text</label>
-                <Textarea id="jd-paste" className="min-h-36" value={pasted} onChange={(event) => setPasted(event.target.value)} placeholder="Paste the full job description here" />
-                <Button size="sm" className="self-start" disabled={!pasted.trim() || analysing}
-                  onClick={() => { setAnalysing(true); setAnalysed(false); window.setTimeout(() => { setAnalysing(false); setAnalysed(true); }, 1400); }}>
-                  <Sparkle size={13} weight="fill" /> Extract requirements
-                </Button>
-                {analysing && <span className="flex items-center gap-2 text-[12px]"><ThinkingDots /><span className="text-shimmer font-semibold">Extracting role, skills and experience</span></span>}
-                {analysed && (
-                  <motion.div initial={reduce ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="bg-raised flex flex-col gap-2 rounded-lg border p-3 text-[12.5px]">
-                    <span className="font-bold">Extracted: Applied AI Engineer</span>
-                    <span>Required: Python, RAG, Evaluation, Vector databases</span>
-                    <span>Preferred: Docker, FastAPI</span>
-                    <span className="text-muted-foreground">Experience: 2+ years. Added to the market skill graph.</span>
-                  </motion.div>
-                )}
-              </TabsContent>
-              <TabsContent value="upload">
-                <div className="hover:border-primary/50 flex flex-col items-center gap-2 rounded-lg border-2 border-dashed p-8 text-center transition-colors">
-                  <UploadSimple size={22} className="text-primary" />
-                  <span className="text-[13px] font-semibold">Drop PDF or DOCX job descriptions</span>
-                  <span className="text-muted-foreground text-[11.5px]">Extraction runs on each file. Up to 10 at a time.</span>
-                  <Button variant="secondary" size="sm">Choose files</Button>
-                </div>
-              </TabsContent>
-              <TabsContent value="api" className="flex flex-col gap-2">
-                {["Permitted job board API", "Company careers pages you follow", "Saved searches"].map((source, index) => (
-                  <div key={source} className="flex items-center justify-between rounded-lg border p-3 text-[12.5px]">
-                    <span className="font-semibold">{source}</span>
-                    <Badge variant={index === 0 ? "demonstrated" : "neutral"}>{index === 0 ? "Syncing daily" : "Off"}</Badge>
-                  </div>
-                ))}
-              </TabsContent>
-            </Tabs>
-          </CardContent>
+      <Section
+        title="Skill demand"
+        description="Share of postings that mention each skill. The darker band is the share where it is mandatory."
+      >
+        <Card className="p-5 sm:p-6">
+          <DemandChart />
         </Card>
+      </Section>
 
-        <Card>
-          <CardContent className="flex flex-col gap-4">
-            <SectionHeading title="Skill demand frequency" description="Share of postings that mention each skill, with the change against the previous 90 days." />
-            <ul className="flex flex-col gap-2.5">
-              {skillDemand.map((row, index) => (
-                <li key={row.skill} className="grid grid-cols-[130px_1fr_70px] items-center gap-3">
-                  <span className="truncate text-[12.5px] font-semibold">{row.skill}</span>
-                  <div className="bg-raised relative h-5 overflow-hidden rounded-md">
-                    <motion.div className="bg-brand absolute inset-y-0 left-0 origin-left rounded-md" style={{ width: row.frequency + "%" }}
-                      initial={reduce ? false : { scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.9, delay: index * 0.06, ease: [0.16, 1, 0.3, 1] }} />
-                    <div className="absolute inset-y-0 left-0 bg-[color-mix(in_oklch,var(--foreground)_18%,transparent)]" style={{ width: row.mandatoryShare + "%" }} title="Share where it is mandatory" />
-                    <span className="numeric text-primary-foreground absolute inset-y-0 left-2 flex items-center text-[10.5px] font-bold">{row.frequency}%</span>
-                  </div>
-                  <span className={cn("numeric flex items-center gap-1 text-[11.5px] font-bold", row.change > 0 ? "text-primary" : row.change < 0 ? "text-gap" : "text-muted-foreground")}>
-                    {row.change > 0 ? <TrendUp size={12} /> : row.change < 0 ? <TrendDown size={12} /> : <Minus size={12} />}
-                    {row.change > 0 ? "+" : ""}{row.change}
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-x-8 gap-y-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+        <Section title="Analyse a posting">
+          <IngestPanel />
+        </Section>
+        <Section title="Shifts this quarter">
+          <Card className="divide-y divide-border">
+            {marketTrends.map((trend, index) => {
+              const down = index === 2;
+              return (
+                <div key={trend.label} className="flex gap-3.5 p-4">
+                  <span className={cn("grid size-8 shrink-0 place-items-center rounded-[8px]", down ? "bg-danger-soft text-danger" : "bg-success-soft text-success")}>
+                    {down ? <TrendDown size={16} /> : <TrendUp size={16} />}
                   </span>
-                </li>
-              ))}
-            </ul>
-            <span className="text-muted-foreground text-[11px]">Darker inner band: share of postings where the skill is mandatory.</span>
-          </CardContent>
-        </Card>
+                  <div className="flex min-w-0 flex-col gap-0.5">
+                    <span className="text-[13.5px] font-medium text-foreground">{trend.label}</span>
+                    <span className="text-gray-11 text-[13px] leading-relaxed">{trend.detail}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </Card>
+        </Section>
       </div>
 
-      <section>
-        <SectionHeading title="Market skill graph" description="Skills that appear together in postings. Bubble size is demand; links are co-occurrence." />
-        <Card><CardContent><MarketGraph /></CardContent></Card>
-      </section>
-
-      <section>
-        <SectionHeading title="Emerging trends" />
-        <div className="grid gap-4 md:grid-cols-3">
-          {marketTrends.map((trend, index) => (
-            <motion.div key={trend.label} initial={reduce ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + index * 0.08 }}>
-              <Card className="h-full"><CardContent className="flex flex-col gap-2">
-                <TrendUp size={18} className={index === 2 ? "text-gap rotate-90" : "text-primary"} />
-                <span className="text-[13.5px] font-bold">{trend.label}</span>
-                <span className="text-muted-foreground text-[12px] leading-relaxed">{trend.detail}</span>
-              </CardContent></Card>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      <section>
-        <SectionHeading title="Compare job descriptions" description="Side by side, every extracted requirement. Filled marks are required, outlined are preferred." />
+      <Section title="Postings side by side" description="Filled marks are mandatory, outlined marks are preferred.">
         <Card className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-[12.5px]">
+          <table className="w-full min-w-[680px] text-[13px]">
             <thead>
-              <tr className="border-b">
-                <th className="p-3 text-left font-bold">Skill</th>
+              <tr className="border-b border-border">
+                <th scope="col" className="text-gray-10 p-4 text-left text-[12px] font-medium">Skill</th>
                 {postings.map((posting) => (
-                  <th key={posting.id} className="p-3 text-left font-semibold">
-                    <span className="block">{posting.company}</span>
-                    <span className="text-muted-foreground block text-[11px] font-normal">{posting.source}, {posting.ingestedAt.slice(5)}</span>
+                  <th key={posting.id} scope="col" className="p-4 text-left font-normal">
+                    <span className="block font-medium text-foreground">{posting.company}</span>
+                    <span className="text-gray-10 block text-[11.5px]">{posting.source}</span>
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-border">
               {allSkills.map((skill) => (
-                <tr key={skill} className="hover:bg-raised border-b last:border-b-0">
-                  <td className="p-3 font-semibold">{skill}</td>
+                <tr key={skill} className="hover:bg-gray-2 transition-colors">
+                  <th scope="row" className="p-4 text-left font-normal text-foreground">{skill}</th>
                   {postings.map((posting) => (
-                    <td key={posting.id} className="p-3">
-                      {posting.required.includes(skill) ? <span className="bg-primary text-primary-foreground grid size-5 place-items-center rounded-full"><Check size={11} weight="bold" /></span>
-                        : posting.preferred.includes(skill) ? <span className="border-primary grid size-5 rounded-full border-2" /> : <span className="text-muted-foreground">-</span>}
+                    <td key={posting.id} className="p-4">
+                      {posting.required.includes(skill) ? (
+                        <span className="bg-gray-12 text-gray-1 grid size-[18px] place-items-center rounded-full" aria-label="Mandatory">
+                          <Check size={10} weight="bold" />
+                        </span>
+                      ) : posting.preferred.includes(skill) ? (
+                        <span className="border-gray-11 block size-[18px] rounded-full border-[1.5px]" aria-label="Preferred" />
+                      ) : (
+                        <span className="text-gray-8" aria-label="Not mentioned">-</span>
+                      )}
                     </td>
                   ))}
                 </tr>
               ))}
-              <tr className="bg-raised/60">
-                <td className="p-3 font-semibold">Experience</td>
-                {postings.map((posting) => <td key={posting.id} className="p-3">{posting.experience}</td>)}
+              <tr>
+                <th scope="row" className="text-gray-11 p-4 text-left font-normal">Experience</th>
+                {postings.map((posting) => <td key={posting.id} className="p-4 text-foreground tabular">{posting.experience}</td>)}
               </tr>
-              <tr className="bg-raised/60">
-                <td className="p-3 font-semibold">Deliverables</td>
-                {postings.map((posting) => <td key={posting.id} className="text-muted-foreground p-3">{posting.deliverables.join(", ")}</td>)}
+              <tr>
+                <th scope="row" className="text-gray-11 p-4 text-left align-top font-normal">Deliverables</th>
+                {postings.map((posting) => <td key={posting.id} className="text-gray-11 p-4 align-top text-[12.5px] leading-relaxed">{posting.deliverables.join(", ")}</td>)}
               </tr>
-              <tr className="bg-raised/60">
-                <td className="p-3 font-semibold">Technologies</td>
-                {postings.map((posting) => <td key={posting.id} className="p-3"><div className="flex flex-wrap gap-1">{posting.technologies.map((tech) => <Badge key={tech} variant="neutral">{tech}</Badge>)}</div></td>)}
+              <tr>
+                <th scope="row" className="text-gray-11 p-4 text-left align-top font-normal">Stack</th>
+                {postings.map((posting) => (
+                  <td key={posting.id} className="p-4 align-top">
+                    <div className="flex flex-wrap gap-1">
+                      {posting.technologies.map((tech) => <Badge key={tech} variant="neutral">{tech}</Badge>)}
+                    </div>
+                  </td>
+                ))}
               </tr>
             </tbody>
           </table>
         </Card>
-      </section>
+      </Section>
     </PageShell>
   );
 }
 
-/** Animated bubble graph of co-occurring skills. */
-function MarketGraph() {
+/**
+ * Horizontal bar per skill. Two layers: total frequency (light) and the
+ * mandatory share (ink) on top, both growing from the left in sequence so
+ * the eye reads top to bottom.
+ */
+function DemandChart() {
+  const ref = useRef<HTMLUListElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-40px" });
   const reduce = useReducedMotion();
-  const width = 900;
-  const height = 300;
-  const nodes = skillDemand.map((row, index) => {
-    const angle = (index / skillDemand.length) * Math.PI * 2;
-    const ring = index === 0 ? 0 : index < 5 ? 105 : 150;
-    return {
-      ...row,
-      x: Math.round(width / 2 + Math.cos(angle) * ring * 2.1),
-      y: Math.round(height / 2 + Math.sin(angle) * ring * 0.85),
-      r: Math.round(14 + row.frequency / 3.2),
-    };
-  });
-  const links: [number, number][] = [[0, 1], [0, 2], [1, 3], [1, 4], [2, 7], [0, 6], [5, 6], [3, 4], [2, 4], [0, 5]];
+  const show = reduce || inView;
 
   return (
-    <svg viewBox={"0 0 " + width + " " + height} className="w-full" role="img" aria-label="Market skill graph: Python at the centre, linked to RAG, LLM APIs, vector databases and evaluation.">
-      <defs>
-        <radialGradient id="bubble" cx="35%" cy="30%">
-          <stop offset="0%" stopColor="var(--brand-2)" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.9" />
-        </radialGradient>
-      </defs>
-      {links.map(([a, b], index) => (
-        <motion.line key={a + "-" + b} x1={nodes[a].x} y1={nodes[a].y} x2={nodes[b].x} y2={nodes[b].y} stroke="var(--border)" strokeWidth={1.5}
-          initial={reduce ? false : { pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }} transition={{ duration: 0.8, delay: 0.3 + index * 0.05 }} />
-      ))}
-      {nodes.map((node, index) => (
-        <motion.g key={node.skill} initial={reduce ? false : { scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 200, damping: 16, delay: index * 0.06 }} style={{ originX: node.x + "px", originY: node.y + "px" }}>
-          <motion.g animate={reduce ? undefined : { y: [0, -4, 0] }} transition={{ duration: 4 + index * 0.3, repeat: Infinity, ease: "easeInOut" }}>
-            <circle cx={node.x} cy={node.y} r={node.r} fill="url(#bubble)" opacity={0.25 + node.frequency / 140} />
-            <text x={node.x} y={node.y + 4} textAnchor="middle" fontSize="11.5" fontWeight="700" fill="var(--foreground)">{node.skill}</text>
-          </motion.g>
-        </motion.g>
-      ))}
-    </svg>
+    <div className="flex flex-col gap-4">
+      <div className="text-gray-10 flex flex-wrap items-center gap-4 text-[12px]">
+        <span className="flex items-center gap-1.5"><span className="bg-gray-12 h-2 w-3 rounded-[2px]" /> Mandatory</span>
+        <span className="flex items-center gap-1.5"><span className="bg-gray-5 h-2 w-3 rounded-[2px]" /> Mentioned</span>
+        <span className="ml-auto">90-day change</span>
+      </div>
+      <ul ref={ref} className="flex flex-col gap-3">
+        {skillDemand.map((row, index) => (
+          <li key={row.skill} className="grid grid-cols-[minmax(88px,140px)_minmax(0,1fr)_44px_56px] items-center gap-3 sm:gap-4">
+            <span className="truncate text-[13.5px] text-foreground">{row.skill}</span>
+            <div className="bg-gray-3 relative h-6 overflow-hidden rounded-[5px]" role="img" aria-label={`${row.frequency}% of postings, ${row.mandatoryShare}% mandatory`}>
+              <motion.div
+                className="bg-gray-5 absolute inset-y-0 left-0 origin-left"
+                style={{ width: row.frequency + "%" }}
+                initial={reduce ? false : { scaleX: 0 }}
+                animate={{ scaleX: show ? 1 : 0 }}
+                transition={{ duration: 0.8, delay: index * 0.05, ease: ease.out }}
+              />
+              <motion.div
+                className="bg-gray-12 absolute inset-y-0 left-0 origin-left"
+                style={{ width: row.mandatoryShare + "%" }}
+                initial={reduce ? false : { scaleX: 0 }}
+                animate={{ scaleX: show ? 1 : 0 }}
+                transition={{ duration: 0.8, delay: 0.15 + index * 0.05, ease: ease.out }}
+              />
+            </div>
+            <span className="text-right text-[13px] font-medium text-foreground tabular">{row.frequency}%</span>
+            <span className="text-right"><Delta value={row.change} suffix="%" /></span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function IngestPanel() {
+  const reduce = useReducedMotion();
+  const { toast } = useToast();
+  const [pasted, setPasted] = useState("");
+  const [status, setStatus] = useState<"idle" | "analysing" | "done">("idle");
+
+  return (
+    <Card className="p-5">
+      <Tabs defaultValue="paste" className="flex flex-col gap-4">
+        <TabsList className="self-start">
+          <TabsTrigger value="paste"><FileText /> Paste</TabsTrigger>
+          <TabsTrigger value="upload"><UploadSimple /> Upload</TabsTrigger>
+          <TabsTrigger value="api"><CloudArrowDown /> Feeds</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="paste" className="flex flex-col gap-3">
+          <label htmlFor="jd-paste" className="text-gray-11 text-[12.5px] font-medium">Job description</label>
+          <Textarea
+            id="jd-paste"
+            className="min-h-32"
+            value={pasted}
+            onChange={(event) => setPasted(event.target.value)}
+            placeholder="Paste the full posting: requirements, stack, experience"
+          />
+          <div className="flex items-center gap-3">
+            <Button
+              disabled={!pasted.trim()}
+              loading={status === "analysing"}
+              onClick={() => {
+                setStatus("analysing");
+                window.setTimeout(() => setStatus("done"), 1200);
+              }}
+            >
+              {status !== "analysing" && <Sparkle weight="fill" />}
+              {status === "analysing" ? "Extracting" : "Extract requirements"}
+            </Button>
+            {status === "analysing" && <span className="text-shimmer text-[12.5px]">Reading requirements and stack</span>}
+          </div>
+
+          <AnimatePresence>
+            {status === "done" && (
+              <motion.div
+                initial={reduce ? false : { opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3, ease: ease.out }}
+                className="bg-gray-2 flex flex-col gap-3 rounded-[10px] border border-border p-4"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[13.5px] font-medium text-foreground">Applied AI Engineer</span>
+                  <Badge variant="success"><Check weight="bold" /> Parsed</Badge>
+                </div>
+                <dl className="flex flex-col gap-2 text-[13px]">
+                  <div className="flex gap-3"><dt className="text-gray-10 w-20 shrink-0">Mandatory</dt><dd className="text-foreground">Python, RAG architecture, vector databases, evaluation</dd></div>
+                  <div className="flex gap-3"><dt className="text-gray-10 w-20 shrink-0">Preferred</dt><dd className="text-foreground">Docker, FastAPI, prompt design</dd></div>
+                  <div className="flex gap-3"><dt className="text-gray-10 w-20 shrink-0">Experience</dt><dd className="text-foreground">2+ years</dd></div>
+                </dl>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </TabsContent>
+
+        <TabsContent value="upload">
+          <div className="hover:border-gray-9 flex flex-col items-center gap-2 rounded-[10px] border border-dashed border-border-strong px-6 py-10 text-center transition-colors">
+            <span className="bg-gray-3 text-gray-11 grid size-10 place-items-center rounded-[10px]"><UploadSimple size={18} /></span>
+            <span className="text-[13.5px] font-medium text-foreground">Drop PDF or DOCX postings</span>
+            <span className="text-gray-10 text-[12.5px]">Up to 10 files at once</span>
+            <Button variant="secondary" size="sm" className="mt-2">Choose files</Button>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="api" className="flex flex-col divide-y divide-border rounded-[10px] border border-border">
+          {[
+            { label: "Greenhouse and Lever sync", on: true },
+            { label: "Target company career pages", on: false },
+            { label: "Saved keyword feeds", on: false },
+          ].map((source) => (
+            <div key={source.label} className="flex items-center justify-between gap-3 px-4 py-3 text-[13px]">
+              <span className="text-foreground">{source.label}</span>
+              {source.on ? (
+                <Badge variant="success">Syncs daily</Badge>
+              ) : (
+                <Button variant="ghost" size="xs" onClick={() => toast({ title: "Feed connected", description: source.label })}>Connect</Button>
+              )}
+            </div>
+          ))}
+        </TabsContent>
+      </Tabs>
+    </Card>
   );
 }

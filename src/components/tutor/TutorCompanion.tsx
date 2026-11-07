@@ -120,7 +120,7 @@ export function TutorCompanion({
         <span className="bg-brand text-primary-foreground grid size-7 place-items-center rounded-full"><ChatCircleDots size={14} weight="fill" /></span>
         <span className="text-[13.5px] font-bold">Ask your instructor</span>
         {isPlaying && (
-          <button type="button" onClick={onInterrupt} className="border-primary/40 text-primary hover:bg-primary/10 ml-1 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold transition-colors">
+          <button type="button" onClick={onInterrupt} className="border-brand-border text-brand-text hover:bg-brand-soft ml-1 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold transition-colors">
             <HandPalm size={12} weight="fill" /> Interrupt
           </button>
         )}
@@ -142,7 +142,7 @@ export function TutorCompanion({
 
           <div className="flex flex-wrap gap-1.5">
             {quickAsks.map((item) => (
-              <button key={item.label} type="button" onClick={() => ask(item.label)} className="hover:border-primary/40 hover:text-foreground text-muted-foreground inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11.5px] font-semibold transition-colors">
+              <button key={item.label} type="button" onClick={() => ask(item.label)} className="hover:border-brand-border hover:text-foreground text-muted-foreground inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11.5px] font-semibold transition-colors">
                 <item.icon size={12} /> {item.label}
               </button>
             ))}
@@ -171,7 +171,7 @@ export function TutorCompanion({
                       <div className="flex flex-col gap-2"><span>{exchange.answer}</span><LoopDiagram /></div>
                     ) : index === exchanges.length - 1 ? <Typewriter text={exchange.answer} /> : exchange.answer}
                     <div className="mt-2 flex gap-1">
-                      <button type="button" onClick={() => setSaved((prev) => [...prev, exchange.question])} className="text-muted-foreground hover:text-primary inline-flex items-center gap-1 text-[11px] font-semibold"><BookmarkSimple size={12} /> Save to vault</button>
+                      <button type="button" onClick={() => setSaved((prev) => [...prev, exchange.question])} className="text-muted-foreground hover:text-brand-text inline-flex items-center gap-1 text-[11px] font-semibold"><BookmarkSimple size={12} /> Save to vault</button>
                     </div>
                   </div>
                 </motion.div>
@@ -182,7 +182,7 @@ export function TutorCompanion({
 
           <form className="flex gap-2" onSubmit={(event) => { event.preventDefault(); ask(draft); }}>
             <label htmlFor="tutor-ask" className="sr-only">Ask the instructor a question</label>
-            <input id="tutor-ask" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Ask anything about this chapter" className="bg-card border-input focus-visible:border-primary h-9 flex-1 rounded-md border px-3 text-[12.5px] focus-visible:outline-none" />
+            <input id="tutor-ask" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Ask anything about this chapter" className="bg-card border-input focus-visible:border-brand h-9 flex-1 rounded-md border px-3 text-[12.5px] focus-visible:outline-none" />
             <Button type="submit" size="icon" aria-label="Ask" disabled={!draft.trim()}><PaperPlaneTilt size={14} weight="fill" /></Button>
           </form>
 
@@ -207,7 +207,7 @@ export function TutorCompanion({
           <ul className="flex flex-col gap-2">
             {notes.map((note, index) => (
               <motion.li key={note + index} initial={reduce ? false : { opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} className="bg-raised flex gap-2 rounded-md p-2.5 text-[12.5px]">
-                <Sparkle size={12} className="text-primary mt-0.5 shrink-0" weight="fill" /> {note}
+                <Sparkle size={12} className="text-brand-text mt-0.5 shrink-0" weight="fill" /> {note}
               </motion.li>
             ))}
           </ul>
@@ -224,7 +224,7 @@ function Segment<T extends string>({ label, options, value, onChange }: { label:
       <span className="text-muted-foreground font-semibold">{label}</span>
       <span className="bg-raised flex rounded-md p-0.5">
         {options.map((option) => (
-          <button key={option} type="button" onClick={() => onChange(option)} aria-pressed={value === option} className={cn("rounded-[5px] px-2 py-0.5 font-semibold", value === option ? "bg-card text-primary shadow-sm" : "text-muted-foreground")}>{option}</button>
+          <button key={option} type="button" onClick={() => onChange(option)} aria-pressed={value === option} className={cn("rounded-[5px] px-2 py-0.5 font-semibold", value === option ? "bg-card text-brand-text shadow-sm" : "text-muted-foreground")}>{option}</button>
         ))}
       </span>
     </span>
@@ -237,12 +237,12 @@ function LoopDiagram() {
     <svg viewBox="0 0 260 90" className="w-full max-w-[280px]" role="img" aria-label="Documents feed the index once; questions read from it on every request.">
       {[["docs", 30], ["index", 130], ["answer", 230]].map(([label, x]) => (
         <g key={label as string}>
-          <rect x={(x as number) - 26} y={30} width={52} height={28} rx={7} fill="none" stroke="var(--primary)" strokeWidth={1.5} />
+          <rect x={(x as number) - 26} y={30} width={52} height={28} rx={7} fill="none" stroke="var(--brand)" strokeWidth={1.5} />
           <text x={x as number} y={48} textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--foreground)">{label}</text>
         </g>
       ))}
       <motion.path d="M56,44 L104,44 M156,44 L204,44" stroke="var(--brand-2)" strokeWidth={2} fill="none" initial={reduce ? false : { pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.8 }} />
-      <motion.path d="M230,30 C230,6 130,6 130,30" stroke="var(--primary)" strokeDasharray="4 4" strokeWidth={1.5} fill="none" initial={reduce ? false : { pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, delay: 0.5 }} />
+      <motion.path d="M230,30 C230,6 130,6 130,30" stroke="var(--brand)" strokeDasharray="4 4" strokeWidth={1.5} fill="none" initial={reduce ? false : { pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, delay: 0.5 }} />
     </svg>
   );
 }

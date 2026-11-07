@@ -23,11 +23,11 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "border-border flex flex-col items-center gap-3 rounded-xl border border-dashed px-6 py-12 text-center",
+        "flex flex-col items-center gap-3 rounded-[var(--radius-surface)] border border-dashed border-border-strong px-6 py-14 text-center",
         className,
       )}
     >
-      <span className="bg-raised text-muted-foreground grid size-11 place-items-center rounded-full">
+      <span className="bg-gray-3 text-gray-10 grid size-10 place-items-center rounded-[10px]">
         <IconGlyph size={20} />
       </span>
       <div className="flex flex-col gap-1.5">
@@ -81,12 +81,12 @@ export function InlineError({
     <div
       role="alert"
       className={cn(
-        "border-destructive/35 bg-destructive/[0.06] flex flex-wrap items-center gap-3 rounded-xl border px-4 py-3",
+        "bg-danger-soft flex flex-wrap items-center gap-3 rounded-[var(--radius-surface)] border border-danger/30 px-4 py-3",
         className,
       )}
     >
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <strong className="text-destructive text-[13px] font-semibold">{title}</strong>
+        <strong className="text-danger text-[13px] font-semibold">{title}</strong>
         <span className="text-muted-foreground text-[12.5px] leading-snug">{description}</span>
       </div>
       {action}

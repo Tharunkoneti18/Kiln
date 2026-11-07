@@ -53,13 +53,13 @@ export function LessonOutline({
                 className={cn(
                   "flex w-full items-start gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors",
                   isCurrent
-                    ? "bg-primary/10 text-primary ring-primary/20 ring-1"
+                    ? "bg-brand-soft text-brand-text ring-brand/20 ring-1"
                     : "text-muted-foreground hover:bg-raised hover:text-foreground",
                 )}
               >
                 <span className="mt-0.5 shrink-0">
                   {isDone ? (
-                    <CheckCircle size={15} weight="fill" className="text-primary" />
+                    <CheckCircle size={15} weight="fill" className="text-brand-text" />
                   ) : (
                     <span
                       className={cn(
@@ -88,8 +88,8 @@ export function LessonOutline({
         })}
       </ol>
 
-      <div className="border-primary/25 bg-primary/[0.05] mt-1 rounded-md border p-3">
-        <h3 className="text-primary mb-1 text-[11px] font-bold tracking-wide">Why this lesson</h3>
+      <div className="border-brand-border bg-brand-soft mt-1 rounded-md border p-3">
+        <h3 className="text-brand-text mb-1 text-[11px] font-bold tracking-wide">Why this lesson</h3>
         <p className="text-[12px] leading-relaxed">{reason}</p>
       </div>
     </nav>

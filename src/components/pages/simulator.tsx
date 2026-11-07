@@ -1,32 +1,50 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Bug, ChatCircleText, CheckCircle, Circle, Code, GitPullRequest, Lightning, PaperPlaneTilt, Target, TreeStructure, UserCircle } from "@phosphor-icons/react";
+import { ArrowUp, Bug, ChatCircleText, Check, Code, GitPullRequest, Lightning, Target, TreeStructure } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { GrowBar, ProgressRing, ThinkingDots } from "@/components/motion/primitives";
-import { PageHeader, PageShell } from "@/components/shell/page-header";
+import { Card } from "@/components/ui/card";
+import { Meter, Ring } from "@/components/system/data";
+import { PageHeader, PageShell, Rise } from "@/components/shell/page-header";
 import { simulations } from "@/lib/mock/data";
 import type { SimulationScenario } from "@/lib/mock/types";
+import { ease, spring } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 const taskIcon: Record<SimulationScenario["tasks"][number]["kind"], typeof Code> = {
-  requirements: Target, architecture: TreeStructure, implementation: Code, debugging: Bug, review: GitPullRequest, communication: ChatCircleText,
+  requirements: Target,
+  architecture: TreeStructure,
+  implementation: Code,
+  debugging: Bug,
+  review: GitPullRequest,
+  communication: ChatCircleText,
 };
+
+const statusLabel = { completed: "Completed", in_progress: "In progress", available: "Not started" } as const;
+
+type Message = { from: "stakeholder" | "you"; text: string };
 
 export function SimulatorView() {
   const reduce = useReducedMotion();
   const [activeId, setActiveId] = useState("sim-1");
   const [twistShown, setTwistShown] = useState(false);
   const [reply, setReply] = useState("");
-  const [thread, setThread] = useState<{ from: "stakeholder" | "you"; text: string }[]>([
+  const [thread, setThread] = useState<Message[]>([
     { from: "stakeholder", text: "Three customers this week got refund terms we do not offer. I need to know if this is the model or our data, and what we ship today." },
     { from: "you", text: "Logs show the retriever returned the 2024 policy page. It was never re-indexed after the update." },
   ]);
   const [typing, setTyping] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const active = simulations.find((scenario) => scenario.id === activeId)!;
+  const stakeholderName = active.stakeholder.split(",")[0];
+  const initials = stakeholderName.split(" ").map((part) => part[0]).join("").slice(0, 2);
+
+  useEffect(() => {
+    const node = scrollRef.current;
+    if (node) node.scrollTo({ top: node.scrollHeight, behavior: reduce ? "auto" : "smooth" });
+  }, [thread, typing, twistShown, reduce]);
 
   const send = () => {
     if (!reply.trim()) return;
@@ -41,84 +59,178 @@ export function SimulatorView() {
   };
 
   return (
-    <PageShell className="flex flex-col gap-7">
+    <PageShell width="wide">
       <PageHeader
-        icon="shadow"
-        context="Practice the job before you have it"
-        title="Job Shadow Simulator"
-        description="Role-specific workplace scenarios where the AI plays your manager or stakeholder. Requirements change mid-task, code gets reviewed, and you are assessed on decisions and communication as well as code."
+        context="Realistic workplace scenarios"
+        title="Shadow the job before you get it"
+        description="An AI plays your manager or stakeholder. Scope shifts mid-task, trade-offs need defending, and you are scored on decisions as well as code."
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
-        {simulations.map((scenario) => (
-          <button key={scenario.id} type="button" onClick={() => setActiveId(scenario.id)} aria-pressed={activeId === scenario.id}
-            className={cn("bg-card flex flex-col gap-2 rounded-xl border p-4 text-left transition-all", activeId === scenario.id ? "border-primary ring-primary/20 ring-2" : "hover:border-primary/40 hover:-translate-y-0.5")}>
-            <div className="flex items-center justify-between">
-              <Badge variant={scenario.status === "completed" ? "demonstrated" : scenario.status === "in_progress" ? "primary" : "neutral"}>{scenario.status.replace("_", " ")}</Badge>
-              {scenario.score !== undefined && <span className="numeric text-[13px] font-bold">{scenario.score}</span>}
-            </div>
-            <span className="text-[14px] leading-snug font-bold">{scenario.title}</span>
-            <span className="text-muted-foreground text-[11.5px]">With {scenario.stakeholder}</span>
-          </button>
-        ))}
-      </div>
-
-      <AnimatePresence mode="wait">
-        <motion.div key={active.id} initial={reduce ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.28 }} className="grid gap-5 xl:grid-cols-[1fr_1.2fr]">
-          <Card><CardContent className="flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <span className="bg-brand text-primary-foreground grid size-11 place-items-center rounded-full"><UserCircle size={22} weight="fill" /></span>
-              <div className="flex flex-col"><span className="text-[14px] font-bold">{active.stakeholder}</span><span className="text-muted-foreground text-[11.5px]">AI stakeholder, you are the {active.role}</span></div>
-            </div>
-            <div className="bg-raised rounded-lg p-3.5 text-[13px] leading-relaxed"><b>Brief: </b>{active.brief}</div>
-            <h3 className="text-[12.5px] font-bold">Your tasks</h3>
-            {active.tasks.map((task) => {
-              const Glyph = taskIcon[task.kind];
-              return (
-                <div key={task.label} className="flex items-center gap-3 rounded-lg border p-3">
-                  {task.done ? <CheckCircle size={17} weight="fill" className="text-primary" /> : <Circle size={17} className="text-muted-foreground" />}
-                  <span className={cn("flex-1 text-[12.5px] font-semibold", task.done && "text-muted-foreground")}>{task.label}</span>
-                  <Badge variant="neutral"><Glyph /> {task.kind}</Badge>
+      <Rise>
+        <div role="radiogroup" aria-label="Scenario" className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-3">
+          {simulations.map((scenario) => {
+            const selected = activeId === scenario.id;
+            return (
+              <button
+                key={scenario.id}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => setActiveId(scenario.id)}
+                className={cn(
+                  "bg-card flex flex-col gap-2.5 rounded-[var(--radius-surface)] border p-4 text-left shadow-xs transition-[border-color,box-shadow] duration-200",
+                  selected ? "border-gray-12 shadow-sm" : "border-border hover:border-border-strong",
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <Badge variant={scenario.status === "completed" ? "success" : scenario.status === "in_progress" ? "brand" : "neutral"}>{statusLabel[scenario.status]}</Badge>
+                  {scenario.score !== undefined && <span className="text-gray-11 text-[12.5px] tabular">{scenario.score} pts</span>}
                 </div>
-              );
-            })}
+                <span className="text-[14.5px] leading-snug font-medium text-foreground">{scenario.title}</span>
+                <span className="text-gray-10 text-[12.5px]">With {scenario.stakeholder}</span>
+              </button>
+            );
+          })}
+        </div>
+      </Rise>
+
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={active.id}
+          initial={reduce ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, transition: { duration: 0.1 } }}
+          transition={{ duration: 0.3, ease: ease.out }}
+          className="grid grid-cols-[minmax(0,1fr)] items-start gap-x-8 gap-y-8 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)]"
+        >
+          <Card className="overflow-hidden">
+            <div className="flex flex-col gap-2 p-5">
+              <span className="text-gray-10 text-[12.5px]">You are the {active.role}</span>
+              <p className="text-[14px] leading-relaxed text-foreground">{active.brief}</p>
+            </div>
+            <div className="flex flex-col gap-1 border-t border-border p-5">
+              <span className="text-gray-11 mb-2 text-[12.5px] font-medium">Deliverables</span>
+              {active.tasks.map((task) => {
+                const Glyph = taskIcon[task.kind];
+                return (
+                  <div key={task.label} className="flex items-center gap-3 py-1.5">
+                    <span className={cn("grid size-[18px] shrink-0 place-items-center rounded-full", task.done ? "bg-gray-12 text-gray-1" : "border-border-strong border")}>
+                      {task.done && <Check size={10} weight="bold" />}
+                    </span>
+                    <span className={cn("flex-1 text-[13.5px]", task.done ? "text-gray-10" : "text-foreground")}>{task.label}</span>
+                    <Glyph size={15} className="text-gray-9 shrink-0" aria-label={task.kind} />
+                  </div>
+                );
+              })}
+            </div>
             {active.score !== undefined && (
-              <div className="flex items-center gap-4 border-t pt-4">
-                <ProgressRing value={active.score} size={72} stroke={7} gradientId={"sim-" + active.id} label={<span className="numeric text-[16px] font-bold">{active.score}</span>} />
-                <div className="flex flex-1 flex-col gap-2 text-[12px]">
-                  {[["Requirement analysis", 82], ["Technical decisions", 74], ["Communication", 79]].map(([label, value]) => (
-                    <div key={label as string} className="flex flex-col gap-1"><span className="font-semibold">{label}</span><GrowBar value={value as number} className="h-1.5" /></div>
+              <div className="flex items-center gap-5 border-t border-border p-5">
+                <Ring value={active.score} size={60} stroke={5}>
+                  <span className="text-[15px] font-semibold tabular">{active.score}</span>
+                </Ring>
+                <div className="flex flex-1 flex-col gap-2.5">
+                  {[
+                    { label: "Requirement analysis", value: 82 },
+                    { label: "Technical trade-offs", value: 74 },
+                    { label: "Stakeholder communication", value: 79 },
+                  ].map((row, index) => (
+                    <div key={row.label} className="flex flex-col gap-1">
+                      <div className="flex justify-between text-[12.5px]">
+                        <span className="text-gray-11">{row.label}</span>
+                        <span className="text-foreground tabular">{row.value}</span>
+                      </div>
+                      <Meter value={row.value} size="sm" tone="ink" delay={index * 0.08} label={row.label} />
+                    </div>
                   ))}
                 </div>
               </div>
             )}
-          </CardContent></Card>
+          </Card>
 
-          <Card className="flex flex-col"><CardContent className="flex flex-1 flex-col gap-3">
-            <h3 className="text-[13.5px] font-bold">Workplace thread</h3>
-            <AnimatePresence>
-              {twistShown && (
-                <motion.div initial={reduce ? false : { opacity: 0, y: -10, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} className="border-transferable/40 bg-transferable/10 flex items-start gap-2 rounded-lg border p-3 text-[12.5px]">
-                  <Lightning size={16} weight="fill" className="text-transferable mt-0.5 shrink-0" />
-                  <span><b>Requirement changed: </b>{active.twist}</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <div className="scroll-slim flex max-h-[380px] min-h-[220px] flex-1 flex-col gap-2.5 overflow-y-auto">
-              {thread.map((message, index) => (
-                <motion.div key={index} initial={reduce ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                  className={cn("max-w-[85%] rounded-xl px-3.5 py-2.5 text-[12.5px] leading-relaxed", message.from === "you" ? "bg-primary text-primary-foreground self-end rounded-br-sm" : "bg-raised self-start rounded-bl-sm border")}>
-                  {message.text}
-                </motion.div>
-              ))}
-              {typing && <span className="flex items-center gap-2 text-[12px]"><ThinkingDots /><span className="text-muted-foreground">{active.stakeholder.split(",")[0]} is typing</span></span>}
+          <Card className="flex h-[560px] flex-col overflow-hidden">
+            <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+              <span className="bg-gray-12 text-gray-1 grid size-8 place-items-center rounded-full text-[11.5px] font-semibold">{initials}</span>
+              <div className="flex min-w-0 flex-1 flex-col">
+                <span className="text-[13.5px] font-medium text-foreground">{stakeholderName}</span>
+                <span className="text-gray-10 truncate text-[12px]">{active.stakeholder.split(",").slice(1).join(",").trim() || "Stakeholder"}</span>
+              </div>
+              <span className="text-gray-10 flex items-center gap-1.5 text-[12px]">
+                <span className="bg-success size-1.5 rounded-full" aria-hidden="true" /> Live
+              </span>
             </div>
-            <form className="flex gap-2 border-t pt-3" onSubmit={(event) => { event.preventDefault(); send(); }}>
-              <label htmlFor="sim-reply" className="sr-only">Reply to the stakeholder</label>
-              <input id="sim-reply" value={reply} onChange={(event) => setReply(event.target.value)} placeholder="Reply as you would at work" className="bg-card border-input h-9 flex-1 rounded-md border px-3 text-[12.5px]" />
-              <Button type="submit" size="icon" aria-label="Send reply" disabled={!reply.trim()}><PaperPlaneTilt size={14} weight="fill" /></Button>
+
+            <div ref={scrollRef} className="scroll-slim flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-5">
+              <AnimatePresence initial={false}>
+                {thread.map((message, index) => (
+                  <motion.div
+                    key={index}
+                    initial={reduce ? false : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.28, ease: ease.out }}
+                    className={cn("flex max-w-[85%] flex-col gap-1", message.from === "you" ? "items-end self-end" : "items-start self-start")}
+                  >
+                    <span className="text-gray-10 px-1 text-[11.5px]">{message.from === "you" ? "You" : stakeholderName}</span>
+                    <p
+                      className={cn(
+                        "rounded-[14px] px-3.5 py-2.5 text-[13.5px] leading-relaxed",
+                        message.from === "you" ? "bg-gray-12 text-gray-1 rounded-br-[6px]" : "bg-gray-3 text-foreground rounded-bl-[6px]",
+                      )}
+                    >
+                      {message.text}
+                    </p>
+                  </motion.div>
+                ))}
+                {twistShown && (
+                  <motion.div
+                    key="twist"
+                    initial={reduce ? false : { opacity: 0, scale: 0.97, y: 8 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={spring.overlay}
+                    className="bg-warning-soft border-warning/30 flex gap-3 rounded-[12px] border p-3.5"
+                    role="status"
+                  >
+                    <Lightning size={16} weight="fill" className="text-warning mt-0.5 shrink-0" />
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[13px] font-medium text-foreground">Requirements changed</span>
+                      <span className="text-gray-11 text-[13px] leading-relaxed">{active.twist}</span>
+                    </div>
+                  </motion.div>
+                )}
+                {typing && (
+                  <motion.div key="typing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-gray-3 flex w-fit items-center gap-1 rounded-[14px] rounded-bl-[6px] px-3.5 py-3" aria-label={stakeholderName + " is typing"}>
+                    {[0, 1, 2].map((dot) => (
+                      <motion.span
+                        key={dot}
+                        className="bg-gray-10 size-1.5 rounded-full"
+                        animate={reduce ? undefined : { y: [0, -3, 0], opacity: [0.5, 1, 0.5] }}
+                        transition={{ duration: 0.8, repeat: Infinity, delay: dot * 0.14 }}
+                      />
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <form
+              className="flex items-end gap-2 border-t border-border p-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                send();
+              }}
+            >
+              <label htmlFor="sim-reply" className="sr-only">Reply to {stakeholderName}</label>
+              <input
+                id="sim-reply"
+                value={reply}
+                onChange={(event) => setReply(event.target.value)}
+                placeholder={"Reply to " + stakeholderName}
+                className="bg-gray-2 focus:bg-card h-9 flex-1 rounded-[9px] border border-border px-3 text-[13.5px] text-foreground transition-colors outline-none placeholder:text-gray-9 focus:border-border-strong"
+              />
+              <Button type="submit" size="icon" aria-label="Send reply" disabled={!reply.trim()} className="rounded-[9px]">
+                <ArrowUp weight="bold" />
+              </Button>
             </form>
-          </CardContent></Card>
+          </Card>
         </motion.div>
       </AnimatePresence>
     </PageShell>

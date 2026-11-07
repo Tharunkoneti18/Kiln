@@ -92,12 +92,12 @@ export function ConfidenceMeter({
             key={step}
             className={cn(
               "h-2.5 w-[3px] rounded-full",
-              step <= filled ? "bg-primary" : "bg-border",
+              step <= filled ? "bg-gray-11" : "bg-gray-5",
             )}
           />
         ))}
       </span>
-      <span className="text-muted-foreground numeric text-[11.5px]">
+      <span className="text-gray-10 tabular text-[12px]">
         {Math.round(confidence * 100)}%
       </span>
     </span>

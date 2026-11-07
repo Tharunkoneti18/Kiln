@@ -1,32 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Brain, ChatsCircle, ClockCounterClockwise, Microphone, MicrophoneSlash, PaperPlaneTilt, Repeat, UserCircle, Waveform } from "@phosphor-icons/react";
+import { ArrowCounterClockwise, ArrowUp, Brain, Microphone, MicrophoneSlash } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/input";
-import { GrowBar, ThinkingDots } from "@/components/motion/primitives";
-import { PageHeader, PageShell, SectionHeading } from "@/components/shell/page-header";
+import { Card } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Meter } from "@/components/system/data";
+import { LineChart } from "@/components/system/line-chart";
+import { Segmented } from "@/components/system/segmented";
+import { PageHeader, PageShell, Rise, Section } from "@/components/shell/page-header";
 import { interviewSessions, weaknessMemory } from "@/lib/mock/data";
 import type { InterviewType } from "@/lib/mock/types";
+import { ease, spring } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
-const types: { key: InterviewType; label: string }[] = [
-  { key: "technical", label: "Technical" },
-  { key: "system_design", label: "System design" },
-  { key: "project", label: "Project deep-dive" },
-  { key: "behavioral", label: "Behavioral" },
-  { key: "hr", label: "HR" },
+const types: { value: InterviewType; label: string }[] = [
+  { value: "technical", label: "Technical" },
+  { value: "system_design", label: "System design" },
+  { value: "project", label: "Project" },
+  { value: "behavioral", label: "Behavioral" },
+  { value: "hr", label: "HR" },
 ];
+const typeLabel = Object.fromEntries(types.map((item) => [item.value, item.label])) as Record<InterviewType, string>;
 const personas = ["Friendly hiring manager", "Direct senior engineer", "Skeptical architect", "Recruiter screen"];
 const openers: Record<InterviewType, string> = {
-  technical: "Walk me through how you would evaluate a RAG system before shipping it.",
+  technical: "Walk me through how you would evaluate a RAG system before shipping it to production.",
   system_design: "Design question answering over ten million internal documents.",
-  project: "Tell me about docs-copilot. What was the hardest decision?",
-  behavioral: "Tell me about a time you disagreed with a technical decision.",
-  hr: "Why are you moving from backend engineering into AI?",
+  project: "Tell me about docs-copilot. What was the hardest architectural decision?",
+  behavioral: "Tell me about a time you disagreed with a senior technical decision.",
+  hr: "Why are you moving from backend engineering into Applied AI?",
 };
 
 export function InterviewsView() {
@@ -38,8 +42,15 @@ export function InterviewsView() {
   const [turns, setTurns] = useState<{ speaker: "interviewer" | "you"; text: string }[]>([]);
   const [thinking, setThinking] = useState(false);
   const [historyId, setHistoryId] = useState(interviewSessions[0].id);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const history = interviewSessions.find((session) => session.id === historyId)!;
   const conversation = [{ speaker: "interviewer" as const, text: openers[type] }, ...turns];
+  const chronological = [...interviewSessions].reverse();
+
+  useEffect(() => {
+    const node = scrollRef.current;
+    if (node) node.scrollTo({ top: node.scrollHeight, behavior: reduce ? "auto" : "smooth" });
+  }, [turns, thinking, reduce]);
 
   const submit = () => {
     if (!answer.trim()) return;
@@ -48,155 +59,254 @@ export function InterviewsView() {
     setThinking(true);
     window.setTimeout(() => {
       setThinking(false);
-      setTurns((prev) => [...prev, { speaker: "interviewer", text: "Good. You mentioned a golden set. How many questions, and how would you stop it going stale?" }]);
+      setTurns((prev) => [
+        ...prev,
+        { speaker: "interviewer", text: "Good. You mentioned a golden evaluation set. How many ground-truth queries would you build, and how would you catch retrieval drift over time?" },
+      ]);
     }, 1200);
   };
 
-  const trend = [...interviewSessions].reverse().map((session) => (session.scores.technical + session.scores.communication + session.scores.problemSolving) / 3);
-
   return (
-    <PageShell className="flex flex-col gap-7">
+    <PageShell width="wide">
       <PageHeader
-        icon="interview"
-        context="Tuned to your target role and your weak spots"
-        title="Mock Interview and Interview Intelligence"
-        description="Technical, system design, project, behavioral and HR interviews with adaptive follow-ups and different interviewer personalities. Every session is scored, transcribed and remembered."
+        context="Tuned to Applied AI Engineer"
+        title="Practice the interview"
+        description="Technical, design and behavioral rounds with adaptive follow-ups. Every session is transcribed, scored against a rubric, and remembered."
       />
 
-      <Card><CardContent className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center gap-2">
-          {types.map((item) => (
-            <button key={item.key} type="button" onClick={() => { setType(item.key); setTurns([]); }} aria-pressed={type === item.key}
-              className="relative rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold">
-              {type === item.key && <motion.span layoutId="iv-type" className="bg-brand absolute inset-0 rounded-full" transition={{ type: "spring", stiffness: 400, damping: 32 }} />}
-              <span className={cn("relative", type === item.key ? "text-primary-foreground" : "text-muted-foreground")}>{item.label}</span>
-            </button>
-          ))}
+      <Rise className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="no-scrollbar -mx-4 overflow-x-auto px-4 lg:mx-0 lg:px-0">
+          <Segmented
+            label="Interview type"
+            value={type}
+            onChange={(value) => {
+              setType(value);
+              setTurns([]);
+            }}
+            options={types}
+          />
         </div>
-        <div className="flex flex-wrap items-center gap-3 text-[12px]">
-          <span className="text-muted-foreground font-semibold">Interviewer</span>
-          {personas.map((option) => (
-            <button key={option} type="button" onClick={() => setPersona(option)} aria-pressed={persona === option} className={cn("rounded-md border px-2.5 py-1 font-semibold transition-colors", persona === option ? "border-primary text-primary bg-primary/8" : "text-muted-foreground")}>{option}</button>
-          ))}
-          <button type="button" onClick={() => setVoice((value) => !value)} aria-pressed={voice} className={cn("ml-auto inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 font-semibold", voice ? "border-primary text-primary" : "text-muted-foreground")}>
-            {voice ? <Microphone size={14} weight="fill" /> : <MicrophoneSlash size={14} />} Voice mode {voice ? "on" : "off"}
-          </button>
+        <div className="flex items-center gap-2 lg:ml-auto">
+          <label htmlFor="persona" className="text-gray-10 text-[12.5px] whitespace-nowrap">Interviewer</label>
+          <Select value={persona} onValueChange={setPersona}>
+            <SelectTrigger id="persona" className="h-8 w-[210px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {personas.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Button variant={voice ? "primary" : "secondary"} size="sm" onClick={() => setVoice((value) => !value)} aria-pressed={voice}>
+            {voice ? <Microphone weight="fill" /> : <MicrophoneSlash />}
+            Voice
+          </Button>
         </div>
-      </CardContent></Card>
+      </Rise>
 
-      <div className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
-        <Card className="flex flex-col"><CardContent className="flex flex-1 flex-col gap-3">
-          <div className="flex items-center gap-3">
-            <motion.span className="bg-brand text-primary-foreground relative grid size-11 place-items-center rounded-full" animate={thinking && !reduce ? { scale: [1, 1.06, 1] } : undefined} transition={{ repeat: Infinity, duration: 1 }}>
-              <UserCircle size={22} weight="fill" />
-            </motion.span>
-            <div className="flex flex-col"><span className="text-[14px] font-bold">{persona}</span><span className="text-muted-foreground text-[11.5px]">{types.find((item) => item.key === type)?.label} interview, adaptive follow-ups</span></div>
-            {voice && <VoiceWave active={!thinking} />}
-          </div>
-          <div className="scroll-slim flex min-h-[260px] flex-1 flex-col gap-2.5 overflow-y-auto">
-            <AnimatePresence initial={false}>
-              {conversation.map((turn, index) => (
-                <motion.div key={type + index} initial={reduce ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                  className={cn("max-w-[85%] rounded-xl px-3.5 py-2.5 text-[13px] leading-relaxed", turn.speaker === "you" ? "bg-primary text-primary-foreground self-end rounded-br-sm" : "bg-raised self-start rounded-bl-sm border")}>
-                  {turn.text}
-                </motion.div>
-              ))}
-            </AnimatePresence>
-            {thinking && <span className="flex items-center gap-2 text-[12px]"><ThinkingDots /><span className="text-shimmer font-semibold">Choosing a follow-up based on your answer</span></span>}
-          </div>
-          <form className="flex flex-col gap-2 border-t pt-3" onSubmit={(event) => { event.preventDefault(); submit(); }}>
-            <label htmlFor="iv-answer" className="sr-only">Your answer</label>
-            <Textarea id="iv-answer" value={answer} onChange={(event) => setAnswer(event.target.value)} className="min-h-20" placeholder={voice ? "Speak, or type your answer" : "Type your answer"} />
-            <div className="flex gap-2"><Button type="submit" size="sm" disabled={!answer.trim()}><PaperPlaneTilt size={13} weight="fill" /> Answer</Button><Button type="button" variant="ghost" size="sm" onClick={() => setTurns([])}>Restart</Button></div>
-          </form>
-        </CardContent></Card>
-
-        <div className="flex flex-col gap-5">
-          <Card><CardContent className="flex flex-col gap-3">
-            <h3 className="flex items-center gap-2 text-[13.5px] font-bold"><Brain size={15} weight="fill" className="text-primary" /> Weakness memory</h3>
-            {weaknessMemory.map((item) => (
-              <div key={item.weakness} className="flex flex-col gap-1 border-b pb-2.5 last:border-b-0">
-                <div className="flex items-center justify-between"><span className="text-[12.5px] font-semibold">{item.weakness}</span>{item.seen > 1 ? <Badge variant="gap"><Repeat /> Repeated {item.seen}x</Badge> : <Badge variant="neutral">Seen once</Badge>}</div>
-                <span className="text-muted-foreground text-[11.5px]">Revision: {item.action}</span>
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-x-8 gap-y-8 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+        <Rise>
+          <Card className="flex h-[580px] flex-col overflow-hidden">
+            <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+              <span className="bg-gray-12 text-gray-1 grid size-8 place-items-center rounded-full"><Brain size={16} weight="fill" /></span>
+              <div className="flex min-w-0 flex-1 flex-col">
+                <span className="text-[13.5px] font-medium text-foreground">{persona}</span>
+                <span className="text-gray-10 text-[12px]">{typeLabel[type]} round · adapts to your answers</span>
               </div>
-            ))}
-          </CardContent></Card>
-          <Card><CardContent className="flex flex-col gap-3">
-            <h3 className="text-[13.5px] font-bold">Improvement across sessions</h3>
-            <TrendChart values={trend} labels={[...interviewSessions].reverse().map((session) => session.date.slice(5))} />
-          </CardContent></Card>
+              <Button variant="ghost" size="xs" onClick={() => setTurns([])} disabled={turns.length === 0}>
+                <ArrowCounterClockwise /> Restart
+              </Button>
+            </div>
+
+            <div ref={scrollRef} className="scroll-slim flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 py-6">
+              <AnimatePresence initial={false}>
+                {conversation.map((turn, index) => (
+                  <motion.div
+                    key={type + index}
+                    initial={reduce ? false : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, ease: ease.out }}
+                    className={cn("flex flex-col gap-1", turn.speaker === "you" ? "items-end" : "items-start")}
+                  >
+                    <span className="text-gray-10 px-1 text-[11.5px]">{turn.speaker === "you" ? "You" : persona}</span>
+                    {turn.speaker === "you" ? (
+                      <p className="bg-gray-3 max-w-[85%] rounded-[14px] rounded-br-[6px] px-3.5 py-2.5 text-[14px] leading-relaxed text-foreground">{turn.text}</p>
+                    ) : (
+                      <p className="max-w-[92%] px-1 text-[15px] leading-relaxed text-foreground">{turn.text}</p>
+                    )}
+                  </motion.div>
+                ))}
+                {thinking && (
+                  <motion.span key="thinking" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-shimmer px-1 text-[13px]">
+                    Scoring your answer against the rubric
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <form
+              className="flex flex-col gap-2 border-t border-border p-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                submit();
+              }}
+            >
+              <AnimatePresence initial={false}>
+                {voice && (
+                  <motion.div
+                    initial={reduce ? false : { height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.22, ease: ease.out }}
+                    className="overflow-hidden"
+                  >
+                    <div className="text-gray-11 flex items-center gap-3 px-1 pb-1 text-[12.5px]">
+                      <Waveform />
+                      Listening. Speak your answer, or type below.
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              <div className="bg-gray-2 focus-within:border-border-strong focus-within:bg-card flex items-end gap-2 rounded-[12px] border border-border p-2 pl-3 transition-colors">
+                <label htmlFor="iv-answer" className="sr-only">Your answer</label>
+                <textarea
+                  id="iv-answer"
+                  rows={2}
+                  value={answer}
+                  onChange={(event) => setAnswer(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+                      event.preventDefault();
+                      submit();
+                    }
+                  }}
+                  placeholder="Answer as you would in the room. Cmd+Enter to send."
+                  className="max-h-40 min-h-[44px] flex-1 resize-none bg-transparent py-1 text-[14px] leading-relaxed text-foreground outline-none placeholder:text-gray-9"
+                />
+                <Button type="submit" size="icon-sm" aria-label="Submit answer" disabled={!answer.trim()} className="rounded-[9px]">
+                  <ArrowUp weight="bold" />
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </Rise>
+
+        <div className="flex flex-col gap-8">
+          <Section title="What they will probe" description="Weaknesses remembered from past sessions.">
+            <Card className="divide-y divide-border">
+              {weaknessMemory.map((item) => (
+                <div key={item.weakness} className="flex flex-col gap-1 px-4 py-3.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[13.5px] font-medium text-foreground">{item.weakness}</span>
+                    <Badge variant={item.seen > 1 ? "warning" : "neutral"}>{item.seen > 1 ? `Seen ${item.seen} times` : "Seen once"}</Badge>
+                  </div>
+                  <span className="text-gray-10 text-[12.5px]">Fix: {item.action}</span>
+                </div>
+              ))}
+            </Card>
+          </Section>
+          <Section title="Average score by session">
+            <Card className="p-5">
+              <LineChart
+                values={chronological.map((session) => (session.scores.technical + session.scores.communication + session.scores.problemSolving) / 3)}
+                labels={chronological.map((session) => session.date.slice(5))}
+                max={5}
+                min={0}
+              />
+            </Card>
+          </Section>
         </div>
       </div>
 
-      <section>
-        <SectionHeading title="Interview history" description="Scores, transcript and weaknesses for every session." />
-        <div className="grid gap-5 lg:grid-cols-[280px_1fr]">
-          <div className="flex flex-col gap-2">
-            {interviewSessions.map((session) => (
-              <button key={session.id} type="button" onClick={() => setHistoryId(session.id)} className={cn("flex items-center gap-3 rounded-lg border p-3 text-left transition-colors", historyId === session.id ? "border-primary bg-primary/6" : "bg-card hover:bg-raised")}>
-                <ClockCounterClockwise size={16} className="text-muted-foreground" />
-                <span className="flex-1"><span className="block text-[12.5px] font-semibold capitalize">{session.type.replace("_", " ")}</span><span className="text-muted-foreground text-[11px]">{session.date}, {session.minutes} min</span></span>
-              </button>
-            ))}
-          </div>
-          <AnimatePresence mode="wait">
-            <motion.div key={history.id} initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <Card><CardContent className="grid gap-5 md:grid-cols-[1fr_1.2fr]">
-                <div className="flex flex-col gap-3">
-                  {([["Technical correctness", history.scores.technical], ["Communication", history.scores.communication], ["Problem solving", history.scores.problemSolving]] as const).map(([label, value], index) => (
-                    <div key={label} className="flex flex-col gap-1"><div className="flex justify-between text-[12px]"><span className="font-semibold">{label}</span><span className="numeric">{value}/5</span></div><GrowBar value={(value / 5) * 100} delay={index * 0.08} className="h-1.5" /></div>
+      <Section title="Past sessions">
+        <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-x-8 gap-y-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+          <Card className="overflow-hidden">
+            <ul className="divide-y divide-border">
+              {interviewSessions.map((session) => {
+                const selected = historyId === session.id;
+                const avg = (session.scores.technical + session.scores.communication + session.scores.problemSolving) / 3;
+                return (
+                  <li key={session.id}>
+                    <button
+                      type="button"
+                      onClick={() => setHistoryId(session.id)}
+                      aria-pressed={selected}
+                      className={cn("relative flex w-full items-center gap-3 px-4 py-3 text-left transition-colors", selected ? "bg-gray-2" : "hover:bg-gray-2")}
+                    >
+                      {selected && <motion.span layoutId={reduce ? undefined : "iv-history"} transition={spring.layout} className="bg-brand absolute inset-y-2 left-0 w-[3px] rounded-r-full" />}
+                      <span className="flex min-w-0 flex-1 flex-col">
+                        <span className="text-[13.5px] font-medium text-foreground">{typeLabel[session.type]}</span>
+                        <span className="text-gray-10 text-[12px] tabular">{session.date} · {session.minutes} min</span>
+                      </span>
+                      <span className="text-gray-11 text-[13px] tabular">{avg.toFixed(1)}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </Card>
+
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div key={history.id} initial={reduce ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, transition: { duration: 0.1 } }} transition={{ duration: 0.28, ease: ease.out }}>
+              <Card className="grid grid-cols-[minmax(0,1fr)] md:grid-cols-2">
+                <div className="flex flex-col gap-4 p-5 md:border-r md:border-border">
+                  <span className="text-gray-11 text-[12.5px] font-medium">Rubric, 1 to 5</span>
+                  {[
+                    { label: "Technical correctness", value: history.scores.technical },
+                    { label: "Communication", value: history.scores.communication },
+                    { label: "Problem solving", value: history.scores.problemSolving },
+                  ].map((row, index) => (
+                    <div key={row.label} className="flex flex-col gap-1.5">
+                      <div className="flex justify-between text-[13px]">
+                        <span className="text-gray-11">{row.label}</span>
+                        <span className="text-foreground tabular">{row.value}</span>
+                      </div>
+                      <Meter value={row.value} max={5} tone={row.value >= 3.5 ? "ink" : "brand"} delay={index * 0.08} label={row.label} />
+                    </div>
                   ))}
-                  <div className="flex flex-wrap gap-1 pt-1">{history.weaknesses.map((weakness) => <Badge key={weakness} variant="gap">{weakness}</Badge>)}</div>
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {history.weaknesses.map((weakness) => <Badge key={weakness} variant="warning">{weakness}</Badge>)}
+                  </div>
                 </div>
-                <div className="flex flex-col gap-2">
-                  <span className="flex items-center gap-1.5 text-[12.5px] font-bold"><ChatsCircle size={14} /> Transcript</span>
-                  {history.transcript.map((line, index) => <p key={index} className="text-[12.5px] leading-relaxed"><b className={line.speaker === "you" ? "text-primary" : ""}>{line.speaker === "you" ? "You" : "Interviewer"}: </b>{line.text}</p>)}
+                <div className="flex flex-col gap-3 p-5 max-md:border-t max-md:border-border">
+                  <span className="text-gray-11 text-[12.5px] font-medium">Transcript excerpt</span>
+                  <div className="flex flex-col gap-3">
+                    {history.transcript.slice(0, 3).map((line, index) => (
+                      <p key={index} className="text-[13px] leading-relaxed">
+                        <span className="text-gray-10">{line.speaker === "you" ? "You: " : "Interviewer: "}</span>
+                        <span className="text-foreground">{line.text}</span>
+                      </p>
+                    ))}
+                  </div>
                 </div>
-              </CardContent></Card>
+              </Card>
             </motion.div>
           </AnimatePresence>
         </div>
-      </section>
+      </Section>
     </PageShell>
   );
 }
 
-function VoiceWave({ active }: { active: boolean }) {
+/** Live input level: bars driven by staggered loops, frozen under reduced motion. */
+function Waveform() {
   const reduce = useReducedMotion();
   return (
-    <span className="ml-auto flex h-6 items-center gap-[3px]" aria-label="Voice mode active">
-      <Waveform size={14} className="text-primary mr-1" />
-      {Array.from({ length: 12 }, (_, index) => (
-        <motion.span key={index} className="bg-brand w-[3px] rounded-full" style={{ height: 6 }}
-          animate={active && !reduce ? { height: [6, 8 + ((index * 7) % 14), 6] } : { height: 6 }}
-          transition={{ duration: 0.7 + (index % 4) * 0.12, repeat: Infinity, ease: "easeInOut" }} />
+    <span className="flex h-4 items-center gap-[3px]" aria-hidden="true">
+      {[0.5, 0.9, 0.6, 1, 0.7, 0.4, 0.8].map((peak, index) => (
+        <motion.span
+          key={index}
+          className="bg-brand w-[3px] rounded-full"
+          style={{ height: "100%", originY: 0.5 }}
+          initial={{ scaleY: 0.3 }}
+          animate={reduce ? { scaleY: peak * 0.6 } : { scaleY: [0.25, peak, 0.35, peak * 0.7, 0.25] }}
+          transition={reduce ? { duration: 0 } : { duration: 1.1, repeat: Infinity, delay: index * 0.09, ease: "easeInOut" }}
+        />
       ))}
     </span>
   );
 }
 
-/** Small line chart, drawn as a path that animates in. */
+/** @deprecated Use `LineChart` from the design system. Kept for old imports. */
 export function TrendChart({ values, labels, max = 5 }: { values: number[]; labels: string[]; max?: number }) {
-  const reduce = useReducedMotion();
-  const width = 320;
-  const height = 120;
-  const points = values.map((value, index) => [
-    Math.round(20 + (index * (width - 40)) / Math.max(1, values.length - 1)),
-    Math.round(height - 22 - (value / max) * (height - 40)),
-  ] as const);
-  const path = points.map(([x, y], index) => (index ? "L" : "M") + x + "," + y).join(" ");
-  const area = path + " L" + points.at(-1)![0] + "," + (height - 22) + " L" + points[0][0] + "," + (height - 22) + " Z";
-  return (
-    <svg viewBox={"0 0 " + width + " " + height} className="w-full" role="img" aria-label={"Trend from " + values[0].toFixed(1) + " to " + values.at(-1)!.toFixed(1)}>
-      <defs><linearGradient id="trend-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--primary)" stopOpacity="0.3" /><stop offset="100%" stopColor="var(--primary)" stopOpacity="0" /></linearGradient></defs>
-      <motion.path d={area} fill="url(#trend-fill)" initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} />
-      <motion.path d={path} fill="none" stroke="var(--primary)" strokeWidth={2.5} strokeLinecap="round" initial={reduce ? false : { pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }} />
-      {points.map(([x, y], index) => (
-        <g key={index}>
-          <motion.circle cx={x} cy={y} r={4} fill="var(--card)" stroke="var(--primary)" strokeWidth={2} initial={reduce ? false : { scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3 + index * 0.15 }} />
-          <text x={x} y={height - 6} textAnchor="middle" fontSize="10" fill="var(--muted-foreground)">{labels[index]}</text>
-        </g>
-      ))}
-    </svg>
-  );
+  return <LineChart values={values} labels={labels} max={max} />;
 }

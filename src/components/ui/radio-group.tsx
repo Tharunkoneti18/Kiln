@@ -40,10 +40,10 @@ export function RadioOption({
   return (
     <label
       className={cn(
-        "flex cursor-pointer items-start gap-3 rounded-md border p-3 text-[13px] leading-relaxed transition-colors",
+        "flex cursor-pointer items-start gap-3 rounded-[10px] border p-3 text-[13.5px] leading-relaxed transition-colors",
         checked
-          ? "border-primary bg-primary/[0.07] text-foreground"
-          : "border-border hover:border-primary/35 hover:bg-raised",
+          ? "border-gray-12 bg-gray-2 text-foreground"
+          : "border-border bg-card hover:border-border-strong",
         className,
       )}
       {...props}

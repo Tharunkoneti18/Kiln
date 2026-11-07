@@ -109,3 +109,12 @@ export function isActive(pathname: string, href: string) {
 export function activeNavItem(pathname: string) {
   return navItems.filter((item) => isActive(pathname, item.href)).sort((a, b) => b.href.length - a.href.length)[0] ?? navItems[0];
 }
+
+/** The section an item lives in, for the top-bar breadcrumb. */
+export function sectionOf(pathname: string): string | null {
+  const item = activeNavItem(pathname);
+  for (const entry of [...sidebar, activityGroup]) {
+    if (isGroup(entry) && entry.items.some((child) => child.href === item.href)) return entry.label;
+  }
+  return null;
+}

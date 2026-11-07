@@ -1,33 +1,34 @@
 import type { Metadata, Viewport } from "next";
-import "@fontsource-variable/inter";
-import "@fontsource-variable/manrope";
-import "@fontsource-variable/jetbrains-mono";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
+import "@fontsource-variable/source-serif-4";
+import "@fontsource-variable/caveat";
 import "./globals.css";
 import { ThemeProvider, themeBootstrapScript } from "@/components/shell/theme-provider";
 
 export const metadata: Metadata = {
   title: {
     default: "Career OS",
-    template: "%s | Career OS",
+    template: "%s · Career OS",
   },
   description:
-    "Turn career evidence into learning, proof and reachable opportunities. Career OS maps your skills against a target role, builds a weekly plan, and teaches the gaps.",
+    "Map the skills a role demands, prove them with real work, and track every step from first lesson to offer.",
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#151a2b" },
+    { media: "(prefers-color-scheme: light)", color: "#FAF9F7" },
+    { media: "(prefers-color-scheme: dark)", color: "#141413" },
   ],
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    // suppressHydrationWarning: the bootstrap script below mutates the class
-    // list before React hydrates, which is intentional.
-    <html lang="en" suppressHydrationWarning>
+    // Fonts are self-hosted (next/font + fontsource): no third-party request
+    // on first paint, and no layout shift while a remote stylesheet loads.
+    <html lang="en" suppressHydrationWarning className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
       </head>

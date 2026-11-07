@@ -5,6 +5,7 @@ import { Bell } from "@phosphor-icons/react";
 import { motion, useReducedMotion } from "motion/react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { notifications } from "@/lib/mock/data";
+import { spring } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 /** Bell with an unread count, opening the four most recent alerts. */
@@ -18,51 +19,40 @@ export function NotificationsMenu() {
         <button
           type="button"
           aria-label={"Notifications, " + unread + " unread"}
-          className="hover:bg-raised text-foreground/80 relative grid size-10 place-items-center rounded-full transition-colors"
+          className="text-gray-11 hover:bg-gray-3 hover:text-foreground relative grid size-8 place-items-center rounded-[var(--radius-control)] transition-colors"
         >
-          <Bell size={21} />
+          <Bell size={17} />
           {unread > 0 && (
             <motion.span
-              className="bg-destructive text-destructive-foreground absolute top-1.5 right-1.5 grid min-w-4 place-items-center rounded-full px-1 text-[9.5px] font-bold"
+              className="bg-brand ring-background absolute top-1.5 right-1.5 size-2 rounded-full ring-2"
               initial={reduce ? false : { scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 500, damping: 18, delay: 0.4 }}
-            >
-              {unread}
-            </motion.span>
+              transition={{ ...spring.snappy, delay: 0.5 }}
+            />
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[340px] p-0">
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <span className="text-[13px] font-bold">Notifications</span>
-          <span className="text-muted-foreground text-[11.5px]">{unread} unread</span>
+      <PopoverContent align="end" className="w-[360px] overflow-hidden p-0">
+        <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
+          <span className="text-[13.5px] font-semibold">Notifications</span>
+          <span className="text-gray-10 text-[12px]">{unread} unread</span>
         </div>
-        <ul className="flex flex-col">
+        <ul className="flex flex-col pb-1">
           {notifications.slice(0, 4).map((item) => (
             <li key={item.id}>
-              <Link
-                href={item.href}
-                className={cn(
-                  "hover:bg-raised flex gap-3 border-b px-4 py-3 transition-colors",
-                  !item.read && "bg-primary/[0.04]",
-                )}
-              >
-                <span
-                  aria-hidden="true"
-                  className={cn("mt-1.5 size-1.5 shrink-0 rounded-full", item.read ? "bg-transparent" : "bg-primary")}
-                />
+              <Link href={item.href} className="hover:bg-gray-2 flex gap-3 px-4 py-2.5 transition-colors">
+                <span aria-hidden="true" className={cn("mt-[7px] size-1.5 shrink-0 rounded-full", item.read ? "bg-transparent" : "bg-brand")} />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[12.5px] font-semibold">{item.title}</span>
-                  <span className="text-muted-foreground block text-[11.5px] leading-snug">{item.body}</span>
+                  <span className={cn("block text-[13px]", item.read ? "text-gray-11" : "font-medium text-foreground")}>{item.title}</span>
+                  <span className="text-gray-10 mt-0.5 line-clamp-2 block text-[12px] leading-snug">{item.body}</span>
                 </span>
-                <span className="text-muted-foreground shrink-0 text-[10.5px]">{item.time}</span>
+                <span className="text-gray-9 shrink-0 text-[11px] tabular">{item.time}</span>
               </Link>
             </li>
           ))}
         </ul>
-        <Link href="/notifications" className="text-primary block px-4 py-2.5 text-center text-[12px] font-semibold">
-          See all notifications
+        <Link href="/notifications" className="text-gray-11 hover:text-foreground block border-t border-border px-4 py-2.5 text-center text-[12.5px] font-medium transition-colors">
+          View all notifications
         </Link>
       </PopoverContent>
     </Popover>

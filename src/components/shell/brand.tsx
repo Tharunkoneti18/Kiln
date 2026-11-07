@@ -1,20 +1,15 @@
+import { Asterisk } from "@phosphor-icons/react/dist/ssr";
 import { cn } from "@/lib/utils";
 
-/**
- * Career OS mark: a blue disc with three ascending bars. Wordmark is set in a
- * heavy weight with the blue accent, the way the reference treats its logo,
- * without borrowing the reference's own mark.
- */
-export function BrandMark({ className, size = 32 }: { className?: string; size?: number }) {
+/** Clay tile with a bold asterisk: reads at 16px and at 40px. */
+export function BrandMark({ className, size = 28 }: { className?: string; size?: number }) {
   return (
     <span
       aria-hidden="true"
-      className={cn("bg-primary flex items-end justify-center gap-[2.5px] rounded-full", className)}
-      style={{ width: size, height: size, padding: size * 0.24 }}
+      className={cn("bg-brand inline-grid shrink-0 place-items-center text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_1px_2px_rgb(0_0_0/0.12)]", className)}
+      style={{ width: size, height: size, borderRadius: Math.round(size * 0.28) }}
     >
-      <i className="bg-primary-foreground block w-[3px] rounded-full" style={{ height: "38%" }} />
-      <i className="bg-primary-foreground block w-[3px] rounded-full" style={{ height: "66%" }} />
-      <i className="bg-primary-foreground block w-[3px] rounded-full" style={{ height: "100%" }} />
+      <Asterisk size={Math.round(size * 0.62)} weight="bold" />
     </span>
   );
 }
@@ -22,10 +17,10 @@ export function BrandMark({ className, size = 32 }: { className?: string; size?:
 export function BrandLockup({ className, size = "md" }: { className?: string; size?: "md" | "lg" }) {
   const large = size === "lg";
   return (
-    <span className={cn("flex items-center gap-2", className)}>
-      <BrandMark size={large ? 36 : 28} />
-      <span className={cn("text-primary leading-none font-extrabold tracking-tight", large ? "text-[26px]" : "text-[19px]")}>
-        career<span className="text-foreground">os</span>
+    <span className={cn("inline-flex items-center gap-2.5 select-none", className)}>
+      <BrandMark size={large ? 30 : 26} />
+      <span className={cn("font-semibold tracking-[-0.02em] text-foreground", large ? "text-[16px]" : "text-[15px]")}>
+        Career OS
       </span>
     </span>
   );

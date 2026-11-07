@@ -101,11 +101,11 @@ export function ProgressRing({
       <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="var(--primary)" />
-            <stop offset="100%" stopColor="var(--brand-2)" />
+            <stop offset="0%" stopColor="var(--brand)" />
+            <stop offset="100%" stopColor="var(--brand)" />
           </linearGradient>
         </defs>
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--border)" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--gray-4)" strokeWidth={stroke} />
         <motion.circle
           cx={size / 2}
           cy={size / 2}
@@ -144,7 +144,7 @@ export function GrowBar({
 }) {
   const reduce = useReducedMotion();
   return (
-    <div className={cn("bg-raised h-2 w-full overflow-hidden rounded-full", className)}>
+    <div className={cn("bg-gray-4 h-1.5 w-full overflow-hidden rounded-full", className)}>
       <motion.div
         className={cn("bg-brand h-full origin-left rounded-full", barClassName)}
         style={{ width: Math.min(100, Math.max(0, value)) + "%" }}
@@ -169,12 +169,12 @@ export function SpotlightCard({
 }) {
   const x = useMotionValue(-200);
   const y = useMotionValue(-200);
-  const background = useMotionTemplate`radial-gradient(260px circle at ${x}px ${y}px, color-mix(in oklch, var(--primary) 16%, transparent), transparent 70%)`;
+  const background = useMotionTemplate`radial-gradient(260px circle at ${x}px ${y}px, color-mix(in oklab, var(--brand) 10%, transparent), transparent 70%)`;
 
   return (
     <div
       className={cn(
-        "group bg-card relative overflow-hidden rounded-xl border shadow-[var(--shadow-panel)] transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-[var(--shadow-lifted)]",
+        "group bg-card relative overflow-hidden rounded-[var(--radius-surface)] border border-border shadow-xs transition-[border-color,box-shadow] duration-200 hover:border-border-strong hover:shadow-sm",
         className,
       )}
       onPointerMove={(event) => {
@@ -262,7 +262,7 @@ export function Typewriter({
   return (
     <span>
       {text.slice(0, shown)}
-      {shown < text.length && <span className="bg-primary ml-0.5 inline-block h-3.5 w-1.5 animate-pulse align-middle" />}
+      {shown < text.length && <span className="bg-brand ml-0.5 inline-block h-3.5 w-[2px] animate-pulse align-middle" />}
     </span>
   );
 }
@@ -274,7 +274,7 @@ export function ThinkingDots() {
       {[0, 1, 2].map((dot) => (
         <motion.span
           key={dot}
-          className="bg-primary size-1.5 rounded-full"
+          className="bg-brand size-1.5 rounded-full"
           animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
           transition={{ duration: 0.9, repeat: Infinity, delay: dot * 0.15 }}
         />
